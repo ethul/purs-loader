@@ -1,5 +1,5 @@
 {
-  "name": "purescript-loader",
+  "name": "purs-loader",
   "version": "0.0.0",
   "description": "PureScript loader for webpack",
   "main": "index.js",
@@ -8,12 +8,18 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:ethul/purescript-loader.git"
+    "url": "git@github.com:ethul/purs-loader.git"
   },
   "author": "Eric Thul",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/ethul/purescript-loader/issues"
+    "url": "https://github.com/ethul/purs-loader/issues"
   },
-  "homepage": "https://github.com/ethul/purescript-loader"
+  "homepage": "https://github.com/ethul/purs-loader",
+  "dependencies": {
+    "chalk": "^0.5.1",
+    "glob": "4.0.6",
+    "loader-utils": "^0.2.3",
+    "lodash": "^2.4.1"
+  }
 }
