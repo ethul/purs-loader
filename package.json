@@ -1,0 +1,19 @@
+{
+  "name": "purescript-loader",
+  "version": "0.0.0",
+  "description": "PureScript loader for webpack",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:ethul/purescript-loader.git"
+  },
+  "author": "Eric Thul",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ethul/purescript-loader/issues"
+  },
+  "homepage": "https://github.com/ethul/purescript-loader"
+}
