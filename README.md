@@ -1,6 +1,6 @@
 # purs-loader
 
-> [PureScript](http://www.purescript.org) loader for [webpack](https://github.com/webpack/webpack)
+> [PureScript](http://www.purescript.org) loader for [webpack](http://webpack.github.io)
 
 ## Install
 
@@ -11,8 +11,6 @@ npm install purs-loader --save-dev
 ```
 
 ## Options
-
-#### options
 
  - **no-prelude**: Boolean value that toggles `--no-prelude`
   - Do not include the Prelude in the generated Javascript.
