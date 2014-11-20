@@ -13,7 +13,6 @@ var cp = require('child_process')
       'no-opts': '--no-opts',
       'no-magic-do': '--no-magic-do',
       'no-tco': '--no-tco',
-      'runtime-type-checks': '--runtime-type-checks',
       'verbose-errors': '--verbose-errors',
       'output': '--output'
     }

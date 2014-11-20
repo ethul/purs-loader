@@ -20,8 +20,6 @@ npm install purs-loader --save-dev
   - Turn off optimizations which inline calls to >>= for the Eff monad.
  - **no-tco**: Boolean value that toggles `--no-tco`
   - Turn off tail-call elimination.
- - **runtime-type-checks**: Boolean value that toggles `--runtime-type-checks`
-  - Generate simple runtime type checks for function arguments with simple types.
  - **verbose-errors**: Boolean value that toggles `--verbose-errors`
   - Generate verbose error messages.
  - **output**: String value that sets `--output=<string>`
