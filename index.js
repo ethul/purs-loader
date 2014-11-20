@@ -37,7 +37,7 @@ module.exports = function(source){
         if (e) callback(e);
         else {
           var module = path.basename(request, '.purs');
-          fs.readFile(path.join(opts[OPTIONS[OUTPUT]] || OUTPUT, module, 'index.js'), 'utf-8', function(e, output){
+          fs.readFile(path.join(query[OUTPUT] || OUTPUT, module, 'index.js'), 'utf-8', function(e, output){
             if (e) callback(e);
             else callback(e, output);
           });
