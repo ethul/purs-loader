@@ -1,0 +1,14 @@
+{
+  "name": "example",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "webpack": "./node_modules/.bin/webpack",
+    "run": "node dist/app.js"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "purs-loader": "0.0.2",
+    "webpack": "^1.4.15"
+  }
+}
