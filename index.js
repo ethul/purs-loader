@@ -6,6 +6,7 @@ var cp = require('child_process')
   , chalk = require('chalk')
   , lu = require('loader-utils')
   , cwd = process.cwd()
+  , BOWER_PATTERN = path.join('bower_components', 'purescript-*', 'src')
   , PSC_MAKE = 'psc-make'
   , OUTPUT = 'output'
   , OPTIONS = {
@@ -18,6 +19,11 @@ var cp = require('child_process')
     }
 ;
 
+function pattern(root) {
+  var as = [ BOWER_PATTERN, root ];
+  return path.join('{' + as.join(',') + '}', '**', '*.purs');
+}
+
 module.exports = function(source){
   var callback = this.async()
     , request = lu.getRemainingRequest(this)
@@ -29,7 +35,7 @@ module.exports = function(source){
         else return h(OPTIONS[k]);
       }, [])
   ;
-  glob(path.join(root, '**', '*.purs'), function(e, files){
+  glob(pattern(root), function(e, files){
     if (e !== null) callback(e);
     else {
       var cmd = cp.spawn(PSC_MAKE, opts.concat(files));
