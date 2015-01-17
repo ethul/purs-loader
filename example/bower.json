@@ -1,0 +1,15 @@
+{
+  "name": "example",
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "devDependencies": {
+    "purescript-maybe": "~0.2.1"
+  }
+}

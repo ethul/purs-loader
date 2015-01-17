@@ -27,27 +27,4 @@ npm install purs-loader --save-dev
 
 ## Example
 
-```js
-var path = require('path');
-
-module.exports = {
-  entry: './src/test',
-  output: {
-    path: path.join(__dirname, 'dist'),
-    filename: 'app.js'
-  },
-  module: {
-    loaders: [{
-      test: /\.purs$/,
-      loader: 'purs-loader?no-prelude&output=output'
-    }]
-  },
-  resolve: {
-    modulesDirectories: [
-      'node_modules',
-      'web_modules',
-      'output'
-    ]
-  }
-};
-```
+See the [example](https://github.com/ethul/purs-loader/tree/topic/bower-components/example) directory for a complete example.
