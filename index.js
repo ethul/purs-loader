@@ -6,6 +6,7 @@ var cp = require('child_process')
   , chalk = require('chalk')
   , lu = require('loader-utils')
   , cwd = process.cwd()
+  , MODULE_RE = /^module\s+([\w\.]+)\s+/i
   , BOWER_PATTERN = path.join('bower_components', 'purescript-*', 'src')
   , PSC_MAKE = 'psc-make'
   , OUTPUT = 'output'
@@ -42,7 +43,8 @@ module.exports = function(source){
       cmd.on('close', function(e){
         if (e) callback(e);
         else {
-          var module = path.basename(request, '.purs');
+          var result = MODULE_RE.exec(source);
+          var module = result.length > 1 ? result[1] : '';
           fs.readFile(path.join(query[OUTPUT] || OUTPUT, module, 'index.js'), 'utf-8', function(e, output){
             if (e) callback(e);
             else callback(e, output);

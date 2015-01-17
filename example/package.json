@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "webpack": "./node_modules/.bin/webpack",
-    "run": "node dist/app.js"
+    "run": "node dist/app.js",
+    "clean": "rm -rf bower_components && rm -rf dist && rm -rf node_modules && rm -rf output"
   },
   "license": "MIT",
   "devDependencies": {
