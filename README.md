@@ -27,4 +27,4 @@ npm install purs-loader --save-dev
 
 ## Example
 
-See the [example](https://github.com/ethul/purs-loader/tree/topic/bower-components/example) directory for a complete example.
+See the [example](https://github.com/ethul/purs-loader/tree/master/example) directory for a complete example.

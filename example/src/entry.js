@@ -1,7 +1,7 @@
-var test = require('purs?output=output!./Test.purs');
+var test = require('./Test');
 
-var foo = require('purs?output=output!./Foo.purs');
+var foo = require('./Foo');
 
-var baz = require('purs?output=output!./Foo/Baz.purs');
+var baz = require('./Foo/Baz');
 
 console.log(test, foo, baz);

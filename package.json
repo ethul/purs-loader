@@ -2,24 +2,33 @@
   "name": "purs-loader",
   "version": "0.0.3",
   "description": "PureScript loader for webpack",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git@github.com:ethul/purs-loader.git"
-  },
-  "author": "Eric Thul",
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/ethul/purs-loader/issues"
+  "repository": "ethul/purs-loader",
+  "author": {
+    "name": "Eric Thul",
+    "email": "thul.eric@gmail.com"
   },
-  "homepage": "https://github.com/ethul/purs-loader",
+  "scripts": {
+    "build": "npm run-script build:compile && npm run-script build:package",
+    "build:compile": "gulp build",
+    "build:package": "./node_modules/.bin/webpack --progress --colors --profile --bail",
+    "build:json": "./node_modules/.bin/webpack --progress --colors --profile --bail --json > index.json",
+    "prepublish": "npm run-script build"
+  },
+  "files": [
+    "index.js"
+  ],
+  "devDependencies": {
+    "del": "^1.1.1",
+    "gulp": "^3.8.11",
+    "gulp-plumber": "^1.0.0",
+    "gulp-purescript": "^0.3.1",
+    "gulp-util": "^3.0.4",
+    "run-sequence": "^1.0.2",
+    "webpack": "^1.8.4"
+  },
   "dependencies": {
-    "chalk": "^0.5.1",
-    "glob": "4.0.6",
-    "loader-utils": "^0.2.3",
-    "lodash": "^2.4.1"
+    "glob": "^5.0.3",
+    "loader-utils": "^0.2.6"
   }
 }
