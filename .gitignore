@@ -5,7 +5,7 @@ index.js
 node_modules/
 bower_components/
 build/
+example/bundle.js
 example/node_modules/
 example/bower_components/
-example/dist/
 example/output/

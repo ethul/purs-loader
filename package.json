@@ -12,7 +12,8 @@
     "build": "npm run-script build:compile && npm run-script build:package",
     "build:compile": "gulp build",
     "build:package": "./node_modules/.bin/webpack --progress --colors --profile --bail",
-    "build:json": "./node_modules/.bin/webpack --progress --colors --profile --bail --json > index.json"
+    "build:json": "./node_modules/.bin/webpack --progress --colors --profile --bail --json > index.json",
+    "prepublish": "npm run-script build"
   },
   "files": [
     "index.js"

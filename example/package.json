@@ -4,12 +4,12 @@
   "private": true,
   "scripts": {
     "webpack": "./node_modules/.bin/webpack",
-    "run": "node dist/app.js",
-    "clean": "rm -rf bower_components && rm -rf dist && rm -rf node_modules && rm -rf output"
+    "run": "node bundle.js",
+    "clean": "rm -rf bower_components && rm -rf bundle.js && rm -rf node_modules && rm -rf output"
   },
   "license": "MIT",
   "devDependencies": {
     "purs-loader": "file:../",
-    "webpack": "^1.4.15"
+    "webpack": "^1.8.4"
   }
 }
