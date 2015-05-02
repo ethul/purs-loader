@@ -9,9 +9,11 @@ import Control.Monad.Eff (Eff())
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Exception (error)
 
-import Data.Array ((!!), catMaybes, concat, nub, null)
+import Data.Array ((!!), catMaybes, concat, filter, null)
+import Data.Foldable (foldl)
 import Data.Function (Fn2(), mkFn2)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Set (Set(), empty, insert, member, toList, unions)
 import Data.String (joinWith, split)
 import Data.String.Regex (Regex(), match, noFlags, regex)
 import Data.StrMap (StrMap(), fromList, lookup)
@@ -60,11 +62,16 @@ mkGraph files = (fromList <<< catMaybes) <$> sequence (parse <$> files)
                         return $ (\a -> tuple2 a { file: file, imports: imports }) <$> key
 
 mkDeps :: forall eff. String -> Graph -> [String]
-mkDeps key graph = nub $ go [] key
-  where go acc key =
-    maybe acc (\a -> if null a.imports
-                       then acc
-                       else concat $ go (acc <> a.imports) <$> a.imports) (lookup key graph)
+mkDeps key graph = toList $ go empty key
+  where
+    go :: Set String -> String -> Set String
+    go acc key =
+      let node = fromMaybe {file: "", imports: []} (lookup key graph)
+          uniq = filter (not <<< flip member acc) node.imports
+          acc' = foldl (flip insert) acc node.imports
+       in if null uniq
+             then acc'
+             else unions $ go acc' <$> uniq
 
 addDeps :: forall eff. LoaderRef -> Graph -> [String] -> Eff (loader :: Loader | eff) Unit
 addDeps ref graph deps = const unit <$> (sequence $ add <$> deps)

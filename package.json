@@ -22,7 +22,7 @@
     "del": "^1.1.1",
     "gulp": "^3.8.11",
     "gulp-plumber": "^1.0.0",
-    "gulp-purescript": "^0.3.1",
+    "gulp-purescript": "^0.4.2",
     "gulp-util": "^3.0.4",
     "run-sequence": "^1.0.2",
     "webpack": "^1.8.4"
