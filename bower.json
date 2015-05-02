@@ -11,6 +11,7 @@
     "purescript-tuples": "~0.3.4",
     "purescript-maps": "~0.3.3",
     "purescript-arrays": "~0.3.7",
-    "purescript-monad-eff": "~0.1.0"
+    "purescript-monad-eff": "~0.1.0",
+    "purescript-sets": "0.3.2"
   }
 }
