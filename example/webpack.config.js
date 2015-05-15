@@ -5,7 +5,7 @@ var config
     , output: { path: __dirname
               , filename: 'bundle.js'
               }
-    , module: { loaders: [ { test: /\.purs$/, loader: 'purs-loader' } ] }
+    , module: { loaders: [ { test: /\.purs$/, loader: 'purs-loader?src[]=src' } ] }
     , resolve: { modulesDirectories: [ 'node_modules',
                                        'output'
                                      ]

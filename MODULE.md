@@ -177,6 +177,20 @@ instance isForeignOptions :: IsForeign Options
 ```
 
 
+#### `booleanLoaderOption`
+
+``` purescript
+instance booleanLoaderOption :: LoaderOption Boolean
+```
+
+
+#### `stringLoaderOption`
+
+``` purescript
+instance stringLoaderOption :: LoaderOption String
+```
+
+
 #### `pscMakeOutputOption`
 
 ``` purescript
@@ -188,6 +202,13 @@ pscMakeOutputOption :: Foreign -> Maybe String
 
 ``` purescript
 pscMakeOptions :: Foreign -> [String]
+```
+
+
+#### `loaderSrcOption`
+
+``` purescript
+loaderSrcOption :: Foreign -> Maybe [String]
 ```
 
 
