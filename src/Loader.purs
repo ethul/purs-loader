@@ -26,7 +26,7 @@ import PursLoader.Glob (Glob(), glob)
 import PursLoader.LoaderRef (LoaderRef(), Loader(), async, cacheable, clearDependencies, addDependency, query, resourcePath)
 import PursLoader.LoaderUtil (getRemainingRequest, parseQuery)
 import PursLoader.OS (eol)
-import PursLoader.Options (pscMakeOptions, pscMakeDefaultOutput, pscMakeOutputOption)
+import PursLoader.Options (loaderSrcOption, pscMakeOptions, pscMakeDefaultOutput, pscMakeOutputOption)
 import PursLoader.Path (dirname, join, relative, resolve)
 
 foreign import cwd "var cwd = process.cwd();" :: String
@@ -43,8 +43,8 @@ indexFilename = "index.js"
 
 (!!!) = flip (!!)
 
-pursPattern :: String -> String
-pursPattern root = join [ "{" ++ joinWith "," [ bowerPattern, root ] ++ "}"
+pursPattern :: [String] -> String
+pursPattern srcs = join [ "{" ++ joinWith "," ([ bowerPattern ] <> srcs) ++ "}"
                         , "**"
                         , "*.purs"
                         ]
@@ -86,10 +86,10 @@ loader' ref source = do
   liftEff $ cacheable ref
 
   let request = getRemainingRequest ref
-      root = dirname $ relative cwd request
       parsed = parseQuery $ query ref
+      srcs = loaderSrcOption parsed
       opts = pscMakeOptions parsed
-      pattern = pursPattern root
+      pattern = pursPattern $ fromMaybe [] srcs
       key = match moduleRegex source >>= (!!!) 1
 
   files <- glob pattern
