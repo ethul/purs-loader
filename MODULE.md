@@ -26,17 +26,10 @@ data FS :: !
 ```
 
 
-#### `readFileUtf8`
+#### `writeFileUtf8`
 
 ``` purescript
-readFileUtf8 :: forall eff. String -> Aff (fs :: FS | eff) String
-```
-
-
-#### `readFileUtf8Sync`
-
-``` purescript
-readFileUtf8Sync :: forall eff. String -> Eff (fs :: FS | eff) String
+writeFileUtf8 :: forall eff. String -> String -> Aff (fs :: FS | eff) Unit
 ```
 
 
@@ -50,34 +43,34 @@ data Glob :: !
 ```
 
 
-#### `glob`
+#### `globAll`
 
 ``` purescript
-glob :: forall eff. String -> Aff (glob :: Glob | eff) [String]
+globAll :: forall eff. [String] -> Aff (glob :: Glob | eff) [[String]]
 ```
 
 
 
 ## Module PursLoader.Loader
 
-#### `LoaderEff`
+#### `Effects`
 
 ``` purescript
-type LoaderEff eff a = Eff (fs :: FS, cp :: ChildProcess, glob :: Glob, loader :: Loader | eff) a
+type Effects eff = (loader :: Loader, glob :: Glob, fs :: FS, cp :: ChildProcess | eff)
 ```
 
 
 #### `loader`
 
 ``` purescript
-loader :: forall eff. LoaderRef -> String -> LoaderEff eff Unit
+loader :: forall eff. LoaderRef -> String -> Eff (Effects eff) Unit
 ```
 
 
 #### `loaderFn`
 
 ``` purescript
-loaderFn :: forall eff. Fn2 LoaderRef String (LoaderEff eff Unit)
+loaderFn :: forall eff. Fn2 LoaderRef String (Eff (Effects eff) Unit)
 ```
 
 
@@ -112,27 +105,6 @@ cacheable :: forall eff. LoaderRef -> Eff (loader :: Loader | eff) Unit
 ```
 
 
-#### `clearDependencies`
-
-``` purescript
-clearDependencies :: forall eff. LoaderRef -> Eff (loader :: Loader | eff) Unit
-```
-
-
-#### `resourcePath`
-
-``` purescript
-resourcePath :: LoaderRef -> String
-```
-
-
-#### `addDependency`
-
-``` purescript
-addDependency :: forall eff. LoaderRef -> String -> Eff (loader :: Loader | eff) Unit
-```
-
-
 #### `query`
 
 ``` purescript
@@ -143,27 +115,10 @@ query :: LoaderRef -> String
 
 ## Module PursLoader.LoaderUtil
 
-#### `getRemainingRequest`
-
-``` purescript
-getRemainingRequest :: LoaderRef -> String
-```
-
-
 #### `parseQuery`
 
 ``` purescript
 parseQuery :: String -> Foreign
-```
-
-
-
-## Module PursLoader.OS
-
-#### `eol`
-
-``` purescript
-eol :: String
 ```
 
 
@@ -191,17 +146,17 @@ instance stringLoaderOption :: LoaderOption String
 ```
 
 
-#### `pscMakeOutputOption`
+#### `arrayLoaderOption`
 
 ``` purescript
-pscMakeOutputOption :: Foreign -> Maybe String
+instance arrayLoaderOption :: (LoaderOption a) => LoaderOption [a]
 ```
 
 
-#### `pscMakeOptions`
+#### `pscOptions`
 
 ``` purescript
-pscMakeOptions :: Foreign -> [String]
+pscOptions :: Foreign -> [String]
 ```
 
 
@@ -212,34 +167,10 @@ loaderSrcOption :: Foreign -> Maybe [String]
 ```
 
 
-
-## Module PursLoader.Path
-
-#### `dirname`
+#### `loaderFFIOption`
 
 ``` purescript
-dirname :: String -> String
-```
-
-
-#### `join`
-
-``` purescript
-join :: [String] -> String
-```
-
-
-#### `relative`
-
-``` purescript
-relative :: String -> String -> String
-```
-
-
-#### `resolve`
-
-``` purescript
-resolve :: String -> String
+loaderFFIOption :: Foreign -> Maybe [String]
 ```
 
 

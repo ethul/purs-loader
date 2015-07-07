@@ -1,17 +1,17 @@
 module PursLoader.Options
-  ( pscMakeOptions
-  , pscMakeDefaultOutput
-  , pscMakeOutputOption
+  ( pscOptions
   , loaderSrcOption
+  , loaderFFIOption
   ) where
 
+import Data.Array (concat)
 import Data.Either (either)
 
 import Data.Foreign (Foreign(), F())
 import Data.Foreign.Class (IsForeign, read, readProp)
-import Data.Foreign.NullOrUndefined (NullOrUndefined(), runNullOrUndefined)
+import Data.Foreign.NullOrUndefined (NullOrUndefined(..), runNullOrUndefined)
 
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..), maybe, fromMaybe)
 
 noPreludeOpt = "no-prelude"
 
@@ -29,9 +29,11 @@ commentsOpt = "comments"
 
 noPrefixOpt = "no-prefix"
 
+requirePathOpt = "require-path"
+
 srcOpt = "src"
 
-pscMakeDefaultOutput = "output"
+ffiOpt = "ffi"
 
 newtype Options
   = Options { noPrelude :: NullOrUndefined Boolean
@@ -42,7 +44,9 @@ newtype Options
             , comments :: NullOrUndefined Boolean
             , output :: NullOrUndefined String
             , noPrefix :: NullOrUndefined Boolean
+            , requirePath :: NullOrUndefined String
             , src :: NullOrUndefined [String]
+            , ffi :: NullOrUndefined [String]
             }
 
 instance isForeignOptions :: IsForeign Options where
@@ -54,7 +58,9 @@ instance isForeignOptions :: IsForeign Options where
                           , comments: _
                           , output: _
                           , noPrefix: _
+                          , requirePath: _
                           , src: _
+                          , ffi: _
                           } <$> readProp noPreludeOpt obj
                             <*> readProp noOptsOpt obj
                             <*> readProp noMagicDoOpt obj
@@ -63,26 +69,25 @@ instance isForeignOptions :: IsForeign Options where
                             <*> readProp commentsOpt obj
                             <*> readProp outputOpt obj
                             <*> readProp noPrefixOpt obj
-                            <*> readProp srcOpt obj)
+                            <*> readProp requirePathOpt obj
+                            <*> readProp srcOpt obj
+                            <*> readProp ffiOpt obj)
 
 class LoaderOption a where
   opt :: String -> NullOrUndefined a -> [String]
 
 instance booleanLoaderOption :: LoaderOption Boolean where
-  opt key opt = maybe [] (\a -> if a then ["--" ++ key] else [])
-                         (runNullOrUndefined opt)
+  opt key val = maybe [] (\a -> if a then ["--" ++ key] else []) (runNullOrUndefined val)
 
 instance stringLoaderOption :: LoaderOption String where
-  opt key opt = maybe [] (\a -> ["--" ++ key ++ "=" ++ a])
-                         (runNullOrUndefined opt)
+  opt key val = maybe [] (\a -> ["--" ++ key ++ "=" ++ a]) (runNullOrUndefined val)
 
-pscMakeOutputOption :: Foreign -> Maybe String
-pscMakeOutputOption query = either (const Nothing)
-                                   (\(Options a) -> runNullOrUndefined a.output)
-                                   (read query)
+instance arrayLoaderOption :: (LoaderOption a) => LoaderOption [a] where
+  opt key val = concat (opt key <$> (NullOrUndefined <<< Just)
+                                <$> (fromMaybe [] (runNullOrUndefined val)))
 
-pscMakeOptions :: Foreign -> [String]
-pscMakeOptions query = either (const []) fold parsed
+pscOptions :: Foreign -> [String]
+pscOptions query = either (const []) fold parsed
   where parsed = read query :: F Options
         fold (Options a) = opt noPreludeOpt a.noPrelude <>
                            opt noOptsOpt a.noOpts <>
@@ -91,9 +96,12 @@ pscMakeOptions query = either (const []) fold parsed
                            opt verboseErrorsOpt a.verboseErrors <>
                            opt commentsOpt a.comments <>
                            opt outputOpt a.output <>
-                           opt noPrefixOpt a.noPrefix
+                           opt noPrefixOpt a.noPrefix <>
+                           opt requirePathOpt a.requirePath <>
+                           opt ffiOpt a.ffi
 
 loaderSrcOption :: Foreign -> Maybe [String]
-loaderSrcOption query = either (const Nothing)
-                               (\(Options a) -> runNullOrUndefined a.src)
-                               (read query)
+loaderSrcOption query = either (const Nothing) (\(Options a) -> runNullOrUndefined a.src) (read query)
+
+loaderFFIOption :: Foreign -> Maybe [String]
+loaderFFIOption query = either (const Nothing) (\(Options a) -> runNullOrUndefined a.ffi) (read query)

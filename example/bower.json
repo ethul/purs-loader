@@ -2,6 +2,6 @@
   "name": "example",
   "private": true,
   "devDependencies": {
-    "purescript-maybe": "~0.2.1"
+    "purescript-prelude": "~0.1.0"
   }
 }

@@ -1,6 +1,6 @@
 module PursLoader.Glob
   ( Glob()
-  , glob
+  , globAll
   ) where
 
 import Control.Monad.Aff (Aff(), makeAff)
@@ -11,21 +11,23 @@ import Data.Function
 
 foreign import data Glob :: !
 
-glob :: forall eff. String -> Aff (glob :: Glob | eff) [String]
-glob pattern = makeAff $ runFn3 globFn pattern
+globAll :: forall eff. [String] -> Aff (glob :: Glob | eff) [[String]]
+globAll patterns = makeAff $ runFn3 globAllFn patterns
 
-foreign import globFn """
-function globFn(pattern, errback, callback) {
+foreign import globAllFn """
+function globAllFn(patterns, errback, callback) {
   return function(){
     var glob = require('glob');
 
-    glob(pattern, function(e, data){
-      if (e) errback(e)();
-      else callback(data)();
+    var async = require('async');
+
+    async.map(patterns, glob, function(error, result){
+      if (error) errback(new Error(error))();
+      else callback(result)();
     });
   };
 }
-""" :: forall eff. Fn3 String
+""" :: forall eff. Fn3 [String]
                        (Error -> Eff (glob :: Glob | eff) Unit)
-                       ([String] -> Eff (glob :: Glob | eff) Unit)
+                       ([[String]] -> Eff (glob :: Glob | eff) Unit)
                        (Eff (glob :: Glob | eff) Unit)

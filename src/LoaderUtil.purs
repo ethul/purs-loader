@@ -1,17 +1,10 @@
 module PursLoader.LoaderUtil
-  ( getRemainingRequest
-  , parseQuery
+  ( parseQuery
   ) where
 
 import Data.Foreign (Foreign())
 
 import PursLoader.LoaderRef (LoaderRef())
-
-foreign import getRemainingRequest """
-function getRemainingRequest(ref){
-  var loaderUtils = require('loader-utils');
-  return loaderUtils.getRemainingRequest(ref);
-}""" :: LoaderRef -> String
 
 foreign import parseQuery """
 function parseQuery(query){

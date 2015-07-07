@@ -1,7 +1,6 @@
 module PursLoader.FS
   ( FS()
-  , readFileUtf8
-  , readFileUtf8Sync
+  , writeFileUtf8
   ) where
 
 import Control.Monad.Aff (Aff(), makeAff)
@@ -12,34 +11,22 @@ import Data.Function
 
 foreign import data FS :: !
 
-readFileUtf8 :: forall eff. String -> Aff (fs :: FS | eff) String
-readFileUtf8 filepath = makeAff $ runFn3 readFileUtf8Fn filepath
+writeFileUtf8 :: forall eff. String -> String -> Aff (fs :: FS | eff) Unit
+writeFileUtf8 filepath contents = makeAff $ runFn4 writeFileUtf8Fn filepath contents
 
-readFileUtf8Sync :: forall eff. String -> Eff (fs :: FS | eff) String
-readFileUtf8Sync filepath = readFileUtf8SyncFn filepath
-
-foreign import readFileUtf8Fn """
-function readFileUtf8Fn(filepath, errback, callback) {
+foreign import writeFileUtf8Fn """
+function writeFileUtf8Fn(filepath, contents, errback, callback) {
   return function(){
     var fs = require('fs');
 
-    fs.readFile(filepath, 'utf-8', function(e, data){
-      if (e) errback(e)();
-      else callback(data)();
+    fs.writeFile(filepath, contents, function(error){
+      if (error) errback(error)();
+      else callback()();
     });
   };
 }
-""" :: forall eff. Fn3 String
+""" :: forall eff. Fn4 String
+                       String
                        (Error -> Eff (fs :: FS | eff) Unit)
-                       (String -> Eff (fs :: FS | eff) Unit)
+                       (Unit -> Eff (fs :: FS | eff) Unit)
                        (Eff (fs :: FS | eff) Unit)
-
-foreign import readFileUtf8SyncFn """
-function readFileUtf8SyncFn(filepath) {
-  return function(){
-    var fs = require('fs');
-
-    return fs.readFileSync(filepath, {encoding: 'utf-8'});
-  };
-}
-""" :: forall eff. String -> (Eff (fs :: FS | eff) String)

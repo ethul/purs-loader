@@ -3,16 +3,12 @@ module PursLoader.LoaderRef
   , Loader()
   , async
   , cacheable
-  , clearDependencies
-  , resourcePath
-  , addDependency
   , query
   ) where
 
 import Control.Monad.Eff (Eff())
 import Control.Monad.Eff.Exception (Error())
 
-import Data.Foreign (Foreign())
 import Data.Function (Fn3(), runFn3)
 import Data.Maybe (Maybe(), fromMaybe, isJust)
 
@@ -47,27 +43,6 @@ function cacheable(ref){
     return ref.cacheable && ref.cacheable();
   };
 }""" :: forall eff. LoaderRef -> Eff (loader :: Loader | eff) Unit
-
-foreign import clearDependencies """
-function clearDependencies(ref){
-  return function(){
-    return ref.clearDependencies();
-  };
-}""" :: forall eff. LoaderRef -> Eff (loader :: Loader | eff) Unit
-
-foreign import resourcePath """
-function resourcePath(ref){
-  return ref.resourcePath;
-}""" :: LoaderRef -> String
-
-foreign import addDependency """
-function addDependency(ref){
-  return function(dep){
-    return function(){
-      return ref.addDependency(dep);
-    };
-  };
-}""" :: forall eff. LoaderRef -> String -> Eff (loader :: Loader | eff) Unit
 
 foreign import query """
 function query(ref){

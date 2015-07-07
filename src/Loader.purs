@@ -1,5 +1,5 @@
 module PursLoader.Loader
-  ( LoaderEff()
+  ( Effects()
   , loader
   , loaderFn
   ) where
@@ -9,113 +9,81 @@ import Control.Monad.Eff (Eff())
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Exception (error)
 
-import Data.Array ((!!), catMaybes, concat, filter, null)
-import Data.Foldable (foldl)
+import Data.Array ((!!), concat)
 import Data.Function (Fn2(), mkFn2)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
-import Data.Set (Set(), empty, insert, member, toList, unions)
-import Data.String (joinWith, split)
-import Data.String.Regex (Regex(), match, noFlags, regex)
-import Data.StrMap (StrMap(), fromList, lookup)
-import Data.Traversable (sequence)
-import Data.Tuple.Nested (tuple2)
+import Data.String (joinWith)
+import Data.String.Regex (match, noFlags, regex)
 
 import PursLoader.ChildProcess (ChildProcess(), spawn)
-import PursLoader.FS (FS(), readFileUtf8, readFileUtf8Sync)
-import PursLoader.Glob (Glob(), glob)
-import PursLoader.LoaderRef (LoaderRef(), Loader(), async, cacheable, clearDependencies, addDependency, query, resourcePath)
-import PursLoader.LoaderUtil (getRemainingRequest, parseQuery)
-import PursLoader.OS (eol)
-import PursLoader.Options (loaderSrcOption, pscMakeOptions, pscMakeDefaultOutput, pscMakeOutputOption)
-import PursLoader.Path (dirname, join, relative, resolve)
+import PursLoader.FS (FS(), writeFileUtf8)
+import PursLoader.Glob (Glob(), globAll)
+import PursLoader.LoaderRef (LoaderRef(), Loader(), async, cacheable, query)
+import PursLoader.LoaderUtil (parseQuery)
+import PursLoader.Options (loaderFFIOption, loaderSrcOption, pscOptions)
 
-foreign import cwd "var cwd = process.cwd();" :: String
+type Effects eff = (cp :: ChildProcess, fs :: FS, glob :: Glob, loader :: Loader | eff)
 
 moduleRegex = regex "(?:^|\\n)module\\s+([\\w\\.]+)" noFlags { ignoreCase = true }
 
-importRegex = regex "^\\s*import\\s+(?:qualified\\s+)?([\\w\\.]+)" noFlags { ignoreCase = true }
+pscCommand = "psc"
 
-bowerPattern = join [ "bower_components", "purescript-*", "src" ]
+psciCommand = "psci"
 
-pscMakeCommand = "psc-make"
-
-indexFilename = "index.js"
+psciFilename = ".psci"
 
 (!!!) = flip (!!)
 
-pursPattern :: [String] -> String
-pursPattern srcs = join [ "{" ++ joinWith "," ([ bowerPattern ] <> srcs) ++ "}"
-                        , "**"
-                        , "*.purs"
-                        ]
+foreign import cwd "var cwd = process.cwd();" :: String
 
-type GraphModule = { file :: String, imports :: [String] }
+foreign import relative """
+function relative(from) {
+  return function(to){
+    var path = require('path');
+    return path.relative(from, to);
+  };
+}
+""" :: String -> String -> String
 
-type Graph = StrMap GraphModule
-
-mkGraph :: forall eff. [String] -> Eff (fs :: FS | eff) Graph
-mkGraph files = (fromList <<< catMaybes) <$> sequence (parse <$> files)
-  where parse file = do source <- readFileUtf8Sync file
-                        let key = match moduleRegex source >>= (!!!) 1
-                            lines = split eol source
-                            imports = catMaybes $ (\a -> match importRegex a >>= (!!!) 1) <$> lines
-                        return $ (\a -> tuple2 a { file: file, imports: imports }) <$> key
-
-mkDeps :: forall eff. String -> Graph -> [String]
-mkDeps key graph = toList $ go empty key
+mkPsci :: [[String]] -> [[String]] -> String
+mkPsci srcs ffis = joinWith "\n" ((loadModule <$> concat srcs) <> (loadForeign <$> concat ffis))
   where
-    go :: Set String -> String -> Set String
-    go acc key =
-      let node = fromMaybe {file: "", imports: []} (lookup key graph)
-          uniq = filter (not <<< flip member acc) node.imports
-          acc' = foldl (flip insert) acc node.imports
-       in if null uniq
-             then acc'
-             else unions $ go acc' <$> uniq
+    loadModule :: String -> String
+    loadModule a = ":m " ++ relative cwd a
 
-addDeps :: forall eff. LoaderRef -> Graph -> [String] -> Eff (loader :: Loader | eff) Unit
-addDeps ref graph deps = const unit <$> (sequence $ add <$> deps)
-  where add dep = let res = lookup dep graph
-                      path = (\a -> resolve a.file) <$> res
-                   in maybe (pure unit) (addDependency ref) path
+    loadForeign :: String -> String
+    loadForeign a = ":f " ++ relative cwd a
 
-type LoaderAff eff a = Aff (loader :: Loader, glob :: Glob, cp :: ChildProcess, fs :: FS | eff) a
-
-loader' :: forall eff. LoaderRef -> String -> LoaderAff eff (Maybe String)
+loader' :: forall eff. LoaderRef -> String -> Aff (Effects eff) (Maybe String)
 loader' ref source = do
   liftEff $ cacheable ref
 
-  let request = getRemainingRequest ref
-      parsed = parseQuery $ query ref
-      srcs = loaderSrcOption parsed
-      opts = pscMakeOptions parsed
-      pattern = pursPattern $ fromMaybe [] srcs
-      key = match moduleRegex source >>= (!!!) 1
+  let parsed = parseQuery $ query ref
+      srcs = fromMaybe [] (loaderSrcOption parsed)
+      ffis = fromMaybe [] (loaderFFIOption parsed)
+      opts = pscOptions parsed
 
-  files <- glob pattern
-  graph <- liftEff $ mkGraph files
+  spawn pscCommand (srcs <> opts)
 
-  let deps = fromMaybe [] $ flip mkDeps graph <$> key
-      outputPath = fromMaybe pscMakeDefaultOutput $ pscMakeOutputOption parsed
-      indexPath = (\a -> join [ outputPath, a, indexFilename ]) <$> key
+  srcss <- globAll srcs
+  ffiss <- globAll ffis
 
-  liftEff $ clearDependencies ref
-  liftEff $ addDependency ref (resourcePath ref)
-  liftEff $ addDeps ref graph deps
+  let psciFile = mkPsci srcss ffiss
 
-  spawn pscMakeCommand (opts <> files)
-  indexFile <- sequence $ readFileUtf8 <$> indexPath
-  return indexFile
+  writeFileUtf8 psciFilename psciFile
 
-type LoaderEff eff a = Eff (loader :: Loader, glob :: Glob, cp :: ChildProcess, fs :: FS | eff) a
+  let moduleName = match moduleRegex source >>= (!!!) 1
+      result = (\a -> "module.exports = require('" ++ a ++ "');") <$> moduleName
 
-loader :: forall eff. LoaderRef -> String -> LoaderEff eff Unit
+  return result
+
+loader :: forall eff. LoaderRef -> String -> Eff (Effects eff) Unit
 loader ref source = do
   callback <- async ref
   runAff (\e -> callback (Just e) "")
-         (maybe (callback (Just $ error "Loader has failed to run") "")
+         (maybe (callback (Just (error "Loader has failed to run")) "")
                 (callback Nothing))
          (loader' ref source)
 
-loaderFn :: forall eff. Fn2 LoaderRef String (LoaderEff eff Unit)
+loaderFn :: forall eff. Fn2 LoaderRef String (Eff (Effects eff) Unit)
 loaderFn = mkFn2 loader

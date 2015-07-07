@@ -44,10 +44,62 @@ Sets `--output=<string>` the specifies the output directory, `output` by default
 
 Toggles `--no-prefix` that does not include the comment header.
 
+###### `requirePath` (String)
+
+Sets `--require-path=<string>` that specifies the path prefix to use for `require()` calls in the generated JavaScript.
+
+###### `ffi` (String Array)
+
+Specifies the PureScript FFI files setting `--ffi=<string>`. Glob syntax is supported. This option is specified as `ffi[]=path`.
+
 ###### `src` (String Array)
 
-Specifies PureScript source paths to be globbed for `.purs` files. By default, `bower_components` is search. Additional paths may be specified using this option. This option is specified as `src[]=path`.
+Specifies the PureScript source files. Glob syntax is supported. This option is specified as `src[]=path`.
 
 ## Example
 
+```js
+// webpack.config.js
+
+var path = require('path');
+
+var srcs = ['src[]=bower_components/purescript-*/src/**/*.purs', 'src[]=src/**/*.purs'];
+
+var ffis = ['ffi[]=bower_components/purescript-*/src/**/*.js'];
+
+var output = 'output';
+
+var modulesDirectories = [
+  'node_modules',
+  // The bower component for purescript-prelude is specified here to
+  // allow JavaScript files to require the 'Prelude' module globally.
+  'bower_components/purescript-prelude/src',
+  // The output directory is specified here to allow PureScript files in
+  // your source to import other PureScript modules in your source.
+  output
+];
+
+var config
+  = { entry: './src/entry'
+    , output: { path: __dirname
+              , pathinfo: true
+              , filename: 'bundle.js'
+              }
+    , module: { loaders: [ { test: /\.purs$/
+                           , loader: 'purs-loader?output=' + output + '&' + srcs.concat(ffis).join('&')
+                           } ] }
+    , resolve: { modulesDirectories: modulesDirectories
+               , extensions: ['', '.js', '.purs']
+               }
+    , resolveLoader: { root: path.join(__dirname, 'node_modules') }
+    }
+    ;
+
+module.exports = config;
+```
+
 See the [example](https://github.com/ethul/purs-loader/tree/master/example) directory for a complete example.
+
+## Notes
+
+A `.psci` file is generated during each run of the loader.
