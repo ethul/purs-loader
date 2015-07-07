@@ -1,6 +1,6 @@
 {
   "name": "purs-loader",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "PureScript loader for webpack",
   "license": "MIT",
   "repository": "ethul/purs-loader",
