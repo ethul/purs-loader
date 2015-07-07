@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "build": "./node_modules/.bin/webpack",
+    "build": "mkdir -p output && ./node_modules/.bin/webpack",
     "run": "node bundle.js",
     "clean": "rm -rf bower_components && rm -rf bundle.js && rm -rf node_modules && rm -rf output"
   },
