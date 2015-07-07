@@ -99,3 +99,7 @@ module.exports = config;
 ```
 
 See the [example](https://github.com/ethul/purs-loader/tree/master/example) directory for a complete example.
+
+## Notes
+
+A `.psci` file is generated during each run of the loader.

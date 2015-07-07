@@ -1,6 +1,7 @@
 module PursLoader.Options
   ( pscOptions
   , loaderSrcOption
+  , loaderFFIOption
   ) where
 
 import Data.Array (concat)
@@ -101,3 +102,6 @@ pscOptions query = either (const []) fold parsed
 
 loaderSrcOption :: Foreign -> Maybe [String]
 loaderSrcOption query = either (const Nothing) (\(Options a) -> runNullOrUndefined a.src) (read query)
+
+loaderFFIOption :: Foreign -> Maybe [String]
+loaderFFIOption query = either (const Nothing) (\(Options a) -> runNullOrUndefined a.ffi) (read query)
