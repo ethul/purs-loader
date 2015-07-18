@@ -23,13 +23,23 @@ function spawnFn(command, args, errback, callback) {
 
     var stdout = new Buffer(0);
 
+    var stderr = new Buffer(0);
+
     process.stdout.on('data', function(data){
       stdout = Buffer.concat([stdout, new Buffer(data)]);
     });
 
+    process.stderr.on('data', function(data){
+      stderr = Buffer.concat([stderr, new Buffer(data)]);
+    });
+
     process.on('close', function(code){
-      if (code !== 0) errback(new Error(stdout.toString()))();
-      else callback(stdout.toString())();
+      var output = stdout.toString();
+
+      var error = output.length === 0 ? stderr.toString() : output + "\n" + stderr.toString();
+
+      if (code !== 0) errback(new Error(error))();
+      else callback(output)();
     });
   };
 }
