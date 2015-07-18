@@ -4,6 +4,9 @@ module PursLoader.LoaderRef
   , async
   , cacheable
   , query
+  , clearDependencies
+  , addDependency
+  , resourcePath
   ) where
 
 import Control.Monad.Eff (Eff())
@@ -48,3 +51,24 @@ foreign import query """
 function query(ref){
   return ref.query;
 }""" :: LoaderRef -> String
+
+foreign import clearDependencies """
+function clearDependencies(ref){
+  return function(){
+    return ref.clearDependencies();
+  };
+}""" :: forall eff. LoaderRef -> Eff (loader :: Loader | eff) Unit
+
+foreign import resourcePath """
+function resourcePath(ref){
+  return ref.resourcePath;
+}""" :: LoaderRef -> String
+
+foreign import addDependency """
+function addDependency(ref){
+  return function(dep){
+    return function(){
+      return ref.addDependency(dep);
+    };
+  };
+}""" :: forall eff. LoaderRef -> String -> Eff (loader :: Loader | eff) Unit
