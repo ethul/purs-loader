@@ -13,18 +13,20 @@ import Data.Array ((!!), concat)
 import Data.Function (Fn2(), mkFn2)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.String (joinWith)
-import Data.String.Regex (match, noFlags, regex)
+import Data.String.Regex (match, noFlags, regex, test)
 
 import PursLoader.ChildProcess (ChildProcess(), spawn)
-import PursLoader.FS (FS(), writeFileUtf8)
+import PursLoader.FS (FS(), writeFileUtf8, findFileUtf8)
 import PursLoader.Glob (Glob(), globAll)
-import PursLoader.LoaderRef (LoaderRef(), Loader(), async, cacheable, query)
+import PursLoader.LoaderRef (LoaderRef(), Loader(), async, cacheable, query, clearDependencies, addDependency, resourcePath)
 import PursLoader.LoaderUtil (parseQuery)
 import PursLoader.Options (loaderFFIOption, loaderSrcOption, pscOptions)
 
 type Effects eff = (cp :: ChildProcess, fs :: FS, glob :: Glob, loader :: Loader | eff)
 
 moduleRegex = regex "(?:^|\\n)module\\s+([\\w\\.]+)" noFlags { ignoreCase = true }
+
+foreignRegex = regex "(?:^|\\n)\\s*foreign import\\s+" noFlags { ignoreCase = true }
 
 pscCommand = "psc"
 
@@ -54,6 +56,11 @@ mkPsci srcs ffis = joinWith "\n" ((loadModule <$> concat srcs) <> (loadForeign <
     loadForeign :: String -> String
     loadForeign a = ":f " ++ relative cwd a
 
+findFFI :: forall eff. [[String]] -> String -> Aff (fs :: FS | eff) (Maybe String)
+findFFI ffiss name = findFileUtf8 re (concat ffiss)
+  where
+    re = regex ("(?:^|\\n)//\\s*module\\s*" ++ name ++ "\\s*\\n") noFlags
+
 loader' :: forall eff. LoaderRef -> String -> Aff (Effects eff) (Maybe String)
 loader' ref source = do
   liftEff $ cacheable ref
@@ -73,7 +80,17 @@ loader' ref source = do
   writeFileUtf8 psciFilename psciFile
 
   let moduleName = match moduleRegex source >>= (!!!) 1
+      hasForeign = test foreignRegex source
       result = (\a -> "module.exports = require('" ++ a ++ "');") <$> moduleName
+
+  liftEff (clearDependencies ref)
+  liftEff (addDependency ref (resourcePath ref))
+
+  foreignPath <- if hasForeign
+                    then fromMaybe (pure Nothing) (findFFI ffiss <$> moduleName)
+                    else pure Nothing
+
+  fromMaybe (pure unit) ((\path -> liftEff (addDependency ref path)) <$> foreignPath)
 
   return result
 
