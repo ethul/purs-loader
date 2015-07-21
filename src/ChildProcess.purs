@@ -34,11 +34,17 @@ function spawnFn(command, args, errback, callback) {
     });
 
     process.on('close', function(code){
-      var output = stdout.toString();
+      var chalk = require('chalk');
 
-      var error = output.length === 0 ? stderr.toString() : output + "\n" + stderr.toString();
+      var output = stdout.toString('utf-8');
 
-      if (code !== 0) errback(new Error(error))();
+      var error = stderr.toString('utf-8');
+
+      if (error.length > 0) {
+         console.error('\n' + chalk.red('*') + ' ' + error);
+      }
+
+      if (code !== 0) errback(new Error('Process terminated with code ' + code))();
       else callback(output)();
     });
   };
