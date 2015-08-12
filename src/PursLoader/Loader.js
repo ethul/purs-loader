@@ -15,3 +15,5 @@ function relative(from) {
 exports.cwd = cwd;
 
 exports.relative = relative;
+
+exports.resolve = path.resolve;

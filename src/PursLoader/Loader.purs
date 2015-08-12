@@ -16,6 +16,7 @@ import Data.Function (Fn2(), mkFn2)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.String (joinWith)
 import Data.String.Regex (match, noFlags, regex, test)
+import Data.Traversable (sequence)
 
 import PursLoader.ChildProcess (ChildProcess(), spawn)
 import PursLoader.FS (FS(), writeFileUtf8, findFileUtf8)
@@ -41,6 +42,8 @@ psciFilename = ".psci"
 foreign import cwd :: String
 
 foreign import relative :: String -> String -> String
+
+foreign import resolve :: String -> String
 
 mkPsci :: Array (Array String) -> Array (Array String) -> String
 mkPsci srcs ffis = joinWith "\n" ((loadModule <$> concat srcs) <> (loadForeign <$> concat ffis))
@@ -80,6 +83,7 @@ loader' ref source = do
 
   liftEff (clearDependencies ref)
   liftEff (addDependency ref (resourcePath ref))
+  liftEff (sequence $ (\src -> addDependency ref (resolve src)) <$> concat srcss)
 
   foreignPath <- if hasForeign
                     then fromMaybe (pure Nothing) (findFFI ffiss <$> moduleName)
