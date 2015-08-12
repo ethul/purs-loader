@@ -4,6 +4,8 @@ module PursLoader.Options
   , loaderFFIOption
   ) where
 
+import Prelude (Unit(), (<>), (<$>), (<<<), (++), (<*>), const)
+
 import Data.Array (concat)
 import Data.Either (either)
 
@@ -45,8 +47,8 @@ newtype Options
             , output :: NullOrUndefined String
             , noPrefix :: NullOrUndefined Boolean
             , requirePath :: NullOrUndefined String
-            , src :: NullOrUndefined [String]
-            , ffi :: NullOrUndefined [String]
+            , src :: NullOrUndefined (Array String)
+            , ffi :: NullOrUndefined (Array String)
             }
 
 instance isForeignOptions :: IsForeign Options where
@@ -74,7 +76,7 @@ instance isForeignOptions :: IsForeign Options where
                             <*> readProp ffiOpt obj)
 
 class LoaderOption a where
-  opt :: String -> NullOrUndefined a -> [String]
+  opt :: String -> NullOrUndefined a -> Array String
 
 instance booleanLoaderOption :: LoaderOption Boolean where
   opt key val = maybe [] (\a -> if a then ["--" ++ key] else []) (runNullOrUndefined val)
@@ -82,11 +84,11 @@ instance booleanLoaderOption :: LoaderOption Boolean where
 instance stringLoaderOption :: LoaderOption String where
   opt key val = maybe [] (\a -> ["--" ++ key ++ "=" ++ a]) (runNullOrUndefined val)
 
-instance arrayLoaderOption :: (LoaderOption a) => LoaderOption [a] where
+instance arrayLoaderOption :: (LoaderOption a) => LoaderOption (Array a) where
   opt key val = concat (opt key <$> (NullOrUndefined <<< Just)
                                 <$> (fromMaybe [] (runNullOrUndefined val)))
 
-pscOptions :: Foreign -> [String]
+pscOptions :: Foreign -> Array String
 pscOptions query = either (const []) fold parsed
   where parsed = read query :: F Options
         fold (Options a) = opt noPreludeOpt a.noPrelude <>
@@ -100,8 +102,8 @@ pscOptions query = either (const []) fold parsed
                            opt requirePathOpt a.requirePath <>
                            opt ffiOpt a.ffi
 
-loaderSrcOption :: Foreign -> Maybe [String]
+loaderSrcOption :: Foreign -> Maybe (Array String)
 loaderSrcOption query = either (const Nothing) (\(Options a) -> runNullOrUndefined a.src) (read query)
 
-loaderFFIOption :: Foreign -> Maybe [String]
+loaderFFIOption :: Foreign -> Maybe (Array String)
 loaderFFIOption query = either (const Nothing) (\(Options a) -> runNullOrUndefined a.ffi) (read query)

@@ -4,6 +4,8 @@ module PursLoader.Loader
   , loaderFn
   ) where
 
+import Prelude (Unit(), ($), (<>), (>>=), (<$>), (++), bind, flip, id, pure, return, unit)
+
 import Control.Monad.Aff (Aff(), runAff)
 import Control.Monad.Eff (Eff())
 import Control.Monad.Eff.Class (liftEff)
@@ -14,6 +16,7 @@ import Data.Function (Fn2(), mkFn2)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.String (joinWith)
 import Data.String.Regex (match, noFlags, regex, test)
+import Data.Traversable (sequence)
 
 import PursLoader.ChildProcess (ChildProcess(), spawn)
 import PursLoader.FS (FS(), writeFileUtf8, findFileUtf8)
@@ -36,18 +39,13 @@ psciFilename = ".psci"
 
 (!!!) = flip (!!)
 
-foreign import cwd "var cwd = process.cwd();" :: String
+foreign import cwd :: String
 
-foreign import relative """
-function relative(from) {
-  return function(to){
-    var path = require('path');
-    return path.relative(from, to);
-  };
-}
-""" :: String -> String -> String
+foreign import relative :: String -> String -> String
 
-mkPsci :: [[String]] -> [[String]] -> String
+foreign import resolve :: String -> String
+
+mkPsci :: Array (Array String) -> Array (Array String) -> String
 mkPsci srcs ffis = joinWith "\n" ((loadModule <$> concat srcs) <> (loadForeign <$> concat ffis))
   where
     loadModule :: String -> String
@@ -56,7 +54,7 @@ mkPsci srcs ffis = joinWith "\n" ((loadModule <$> concat srcs) <> (loadForeign <
     loadForeign :: String -> String
     loadForeign a = ":f " ++ relative cwd a
 
-findFFI :: forall eff. [[String]] -> String -> Aff (fs :: FS | eff) (Maybe String)
+findFFI :: forall eff. Array (Array String) -> String -> Aff (fs :: FS | eff) (Maybe String)
 findFFI ffiss name = findFileUtf8 re (concat ffiss)
   where
     re = regex ("(?:^|\\n)//\\s*module\\s*" ++ name ++ "\\s*\\n") noFlags
@@ -79,12 +77,13 @@ loader' ref source = do
 
   writeFileUtf8 psciFilename psciFile
 
-  let moduleName = match moduleRegex source >>= (!!!) 1
+  let moduleName = match moduleRegex source >>= (!!!) 1 >>= id
       hasForeign = test foreignRegex source
       result = (\a -> "module.exports = require('" ++ a ++ "');") <$> moduleName
 
   liftEff (clearDependencies ref)
   liftEff (addDependency ref (resourcePath ref))
+  liftEff (sequence $ (\src -> addDependency ref (resolve src)) <$> concat srcss)
 
   foreignPath <- if hasForeign
                     then fromMaybe (pure Nothing) (findFFI ffiss <$> moduleName)

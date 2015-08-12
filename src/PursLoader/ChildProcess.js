@@ -1,24 +1,13 @@
-module PursLoader.ChildProcess
-  ( ChildProcess()
-  , spawn
-  ) where
+'use strict';
 
-import Control.Monad.Aff (Aff(), makeAff)
-import Control.Monad.Eff (Eff())
-import Control.Monad.Eff.Exception (Error())
+// module PursLoader.ChildProcess
 
-import Data.Function
+var child_process = require('child_process');
 
-foreign import data ChildProcess :: !
+var chalk = require('chalk');
 
-spawn :: forall eff. String -> [String] -> Aff (cp :: ChildProcess | eff) String
-spawn command args = makeAff $ runFn4 spawnFn command args
-
-foreign import spawnFn """
 function spawnFn(command, args, errback, callback) {
   return function(){
-    var child_process = require('child_process');
-
     var process = child_process.spawn(command, args);
 
     var stdout = new Buffer(0);
@@ -34,8 +23,6 @@ function spawnFn(command, args, errback, callback) {
     });
 
     process.on('close', function(code){
-      var chalk = require('chalk');
-
       var output = stdout.toString('utf-8');
 
       var error = stderr.toString('utf-8');
@@ -49,8 +36,5 @@ function spawnFn(command, args, errback, callback) {
     });
   };
 }
-""" :: forall eff. Fn4 String
-                       [String]
-                       (Error -> Eff (cp :: ChildProcess | eff) Unit)
-                       (String -> Eff (cp :: ChildProcess | eff) Unit)
-                       (Eff (cp :: ChildProcess | eff) Unit)
+
+exports.spawnFn = spawnFn;

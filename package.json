@@ -9,9 +9,11 @@
     "email": "thul.eric@gmail.com"
   },
   "scripts": {
-    "build": "npm run-script build:compile && npm run-script build:package",
-    "build:compile": "gulp build",
+    "build": "npm run-script build:compile && npm run-script build:docs && npm run-script build:package",
+    "build:compile": "./node_modules/.bin/pulp build -o build",
+    "build:docs": "./node_modules/.bin/pulp docs",
     "build:package": "./node_modules/.bin/webpack --progress --colors --profile --bail",
+    "build:watch": "./node_modules/.bin/pulp -w build -o build",
     "build:json": "./node_modules/.bin/webpack --progress --colors --profile --bail --json > index.json",
     "prepublish": "npm run-script build"
   },
@@ -19,12 +21,7 @@
     "index.js"
   ],
   "devDependencies": {
-    "del": "^1.1.1",
-    "gulp": "^3.8.11",
-    "gulp-plumber": "^1.0.0",
-    "gulp-purescript": "^0.4.2",
-    "gulp-util": "^3.0.4",
-    "run-sequence": "^1.0.2",
+    "pulp": "^4.3.0",
     "webpack": "^1.8.4"
   },
   "dependencies": {
