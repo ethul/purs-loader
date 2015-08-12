@@ -2,16 +2,8 @@
   "name": "purs-loader",
   "private": true,
   "devDependencies": {
-    "purescript-aff": "~0.9.1",
-    "purescript-exceptions": "~0.2.3",
-    "purescript-strings": "~0.4.5",
-    "purescript-maybe": "~0.2.2",
-    "purescript-foreign": "~0.4.2",
-    "purescript-foldable-traversable": "~0.3.1",
-    "purescript-tuples": "~0.3.4",
-    "purescript-maps": "~0.3.3",
-    "purescript-arrays": "~0.3.7",
-    "purescript-monad-eff": "~0.1.0",
-    "purescript-sets": "0.3.2"
+    "purescript-aff": "~0.11.3",
+    "purescript-strings": "~0.6.0",
+    "purescript-foreign": "~0.6.0"
   }
 }
