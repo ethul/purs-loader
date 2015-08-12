@@ -68,8 +68,6 @@ loader' ref source = do
       ffis = fromMaybe [] (loaderFFIOption parsed)
       opts = pscOptions parsed
 
-  spawn pscCommand (srcs <> opts)
-
   srcss <- globAll srcs
   ffiss <- globAll ffis
 
@@ -90,6 +88,8 @@ loader' ref source = do
                     else pure Nothing
 
   fromMaybe (pure unit) ((\path -> liftEff (addDependency ref path)) <$> foreignPath)
+
+  spawn pscCommand (srcs <> opts)
 
   return result
 
