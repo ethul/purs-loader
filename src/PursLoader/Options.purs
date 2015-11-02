@@ -2,9 +2,11 @@ module PursLoader.Options
   ( pscOptions
   , loaderSrcOption
   , loaderFFIOption
+  , Options()
+  , output
   ) where
 
-import Prelude (Unit(), (<>), (<$>), (<<<), (++), (<*>), const)
+import Prelude (Unit(), (<>), (<$>), (<<<), (++), (<*>), ($), const, id)
 
 import Data.Array (concat)
 import Data.Either (either)
@@ -44,12 +46,15 @@ newtype Options
             , noTco :: NullOrUndefined Boolean
             , verboseErrors :: NullOrUndefined Boolean
             , comments :: NullOrUndefined Boolean
-            , output :: NullOrUndefined String
+            , output :: String
             , noPrefix :: NullOrUndefined Boolean
-            , requirePath :: NullOrUndefined String
+            , requirePath :: String
             , src :: NullOrUndefined (Array String)
             , ffi :: NullOrUndefined (Array String)
             }
+
+output :: Options -> String
+output (Options o) = o.output
 
 instance isForeignOptions :: IsForeign Options where
   read obj = Options <$> ({ noPrelude: _
@@ -60,7 +65,7 @@ instance isForeignOptions :: IsForeign Options where
                           , comments: _
                           , output: _
                           , noPrefix: _
-                          , requirePath: _
+                          , requirePath: "../"
                           , src: _
                           , ffi: _
                           } <$> readProp noPreludeOpt obj
@@ -69,9 +74,8 @@ instance isForeignOptions :: IsForeign Options where
                             <*> readProp noTcoOpt obj
                             <*> readProp verboseErrorsOpt obj
                             <*> readProp commentsOpt obj
-                            <*> readProp outputOpt obj
+                            <*> (maybe "output" id <<< runNullOrUndefined <$> readProp outputOpt obj)
                             <*> readProp noPrefixOpt obj
-                            <*> readProp requirePathOpt obj
                             <*> readProp srcOpt obj
                             <*> readProp ffiOpt obj)
 
@@ -88,19 +92,17 @@ instance arrayLoaderOption :: (LoaderOption a) => LoaderOption (Array a) where
   opt key val = concat (opt key <$> (NullOrUndefined <<< Just)
                                 <$> (fromMaybe [] (runNullOrUndefined val)))
 
-pscOptions :: Foreign -> Array String
-pscOptions query = either (const []) fold parsed
-  where parsed = read query :: F Options
-        fold (Options a) = opt noPreludeOpt a.noPrelude <>
-                           opt noOptsOpt a.noOpts <>
-                           opt noMagicDoOpt a.noMagicDo <>
-                           opt noTcoOpt a.noTco <>
-                           opt verboseErrorsOpt a.verboseErrors <>
-                           opt commentsOpt a.comments <>
-                           opt outputOpt a.output <>
-                           opt noPrefixOpt a.noPrefix <>
-                           opt requirePathOpt a.requirePath <>
-                           opt ffiOpt a.ffi
+pscOptions :: Options -> Array String
+pscOptions (Options a) = opt noPreludeOpt a.noPrelude <>
+                         opt noOptsOpt a.noOpts <>
+                         opt noMagicDoOpt a.noMagicDo <>
+                         opt noTcoOpt a.noTco <>
+                         opt verboseErrorsOpt a.verboseErrors <>
+                         opt commentsOpt a.comments <>
+                         opt outputOpt (NullOrUndefined $ Just a.output) <>
+                         opt noPrefixOpt a.noPrefix <>
+                         opt requirePathOpt (NullOrUndefined $ Just a.requirePath) <>
+                         opt ffiOpt a.ffi
 
 loaderSrcOption :: Foreign -> Maybe (Array String)
 loaderSrcOption query = either (const Nothing) (\(Options a) -> runNullOrUndefined a.src) (read query)

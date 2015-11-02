@@ -12,8 +12,18 @@ function relative(from) {
   };
 }
 
+function joinPath(a) {
+  return function(b) {
+    return path.join(a, b);
+  };
+}
+
 exports.cwd = cwd;
 
 exports.relative = relative;
 
+exports.joinPath = joinPath;
+
 exports.resolve = path.resolve;
+
+exports.dirname = path.dirname;
