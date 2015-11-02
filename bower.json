@@ -2,8 +2,8 @@
   "name": "purs-loader",
   "private": true,
   "devDependencies": {
-    "purescript-aff": "~0.11.3",
-    "purescript-strings": "~0.6.0",
-    "purescript-foreign": "~0.6.0"
+    "purescript-aff": "^0.13.0",
+    "purescript-strings": "^0.7.0",
+    "purescript-foreign": "^0.7.0"
   }
 }
