@@ -1,9 +1,26 @@
 ## Module PursLoader.Options
 
+#### `Options`
+
+``` purescript
+newtype Options
+```
+
+##### Instances
+``` purescript
+instance isForeignOptions :: IsForeign Options
+```
+
+#### `output`
+
+``` purescript
+output :: Options -> String
+```
+
 #### `pscOptions`
 
 ``` purescript
-pscOptions :: Foreign -> Array String
+pscOptions :: Options -> Array String
 ```
 
 #### `loaderSrcOption`

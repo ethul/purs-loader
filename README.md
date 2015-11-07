@@ -44,10 +44,6 @@ Sets `--output=<string>` the specifies the output directory, `output` by default
 
 Toggles `--no-prefix` that does not include the comment header.
 
-###### `requirePath` (String)
-
-Sets `--require-path=<string>` that specifies the path prefix to use for `require()` calls in the generated JavaScript.
-
 ###### `ffi` (String Array)
 
 Specifies the PureScript FFI files setting `--ffi=<string>`. Glob syntax is supported. This option is specified as `ffi[]=path`.
@@ -73,10 +69,7 @@ var modulesDirectories = [
   'node_modules',
   // The bower component for purescript-prelude is specified here to
   // allow JavaScript files to require the 'Prelude' module globally.
-  'bower_components/purescript-prelude/src',
-  // The output directory is specified here to allow PureScript files in
-  // your source to import other PureScript modules in your source.
-  output
+  'bower_components/purescript-prelude/src'
 ];
 
 var config

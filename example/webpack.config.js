@@ -8,8 +8,7 @@ var output = 'output';
 
 var modulesDirectories = [
   'node_modules',
-  'bower_components/purescript-prelude/src',
-  output
+  'bower_components/purescript-prelude/src'
 ];
 
 var config
