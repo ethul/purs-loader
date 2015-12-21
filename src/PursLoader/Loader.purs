@@ -16,7 +16,7 @@ import Data.Function (Fn2(), mkFn2)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Either (Either(..))
 import Data.String (joinWith)
-import Data.String.Regex (match, noFlags, regex, test)
+import Data.String.Regex (Regex(), match, noFlags, regex, test)
 import Data.Traversable (sequence)
 import Data.Foreign (F())
 import Data.Foreign.Class (read)
@@ -30,16 +30,22 @@ import PursLoader.Options (loaderFFIOption, loaderSrcOption, pscOptions, Options
 
 type Effects eff = (cp :: ChildProcess, fs :: FS, glob :: Glob, loader :: Loader, err :: EXCEPTION | eff)
 
+moduleRegex :: Regex
 moduleRegex = regex "(?:^|\\n)module\\s+([\\w\\.]+)" noFlags { ignoreCase = true }
 
+foreignRegex :: Regex
 foreignRegex = regex "(?:^|\\n)\\s*foreign import\\s+" noFlags { ignoreCase = true }
 
+pscCommand :: String
 pscCommand = "psc"
 
+psciCommand :: String
 psciCommand = "psci"
 
+psciFilename :: String
 psciFilename = ".psci"
 
+(!!!) :: forall a. Int -> Array a -> Maybe a
 (!!!) = flip (!!)
 
 foreign import cwd :: String

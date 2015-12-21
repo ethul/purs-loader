@@ -6,37 +6,48 @@ module PursLoader.Options
   , output
   ) where
 
-import Prelude (Unit(), (<>), (<$>), (<<<), (++), (<*>), ($), const, id)
+import Prelude ((<>), (<$>), (<<<), (++), (<*>), ($), const, id)
 
 import Data.Array (concat)
 import Data.Either (either)
 
-import Data.Foreign (Foreign(), F())
+import Data.Foreign (Foreign())
 import Data.Foreign.Class (IsForeign, read, readProp)
 import Data.Foreign.NullOrUndefined (NullOrUndefined(..), runNullOrUndefined)
 
 import Data.Maybe (Maybe(..), maybe, fromMaybe)
 
+noPreludeOpt :: String
 noPreludeOpt = "no-prelude"
 
+noOptsOpt :: String
 noOptsOpt = "no-opts"
 
+noMagicDoOpt :: String
 noMagicDoOpt = "no-magic-do"
 
+noTcoOpt :: String
 noTcoOpt = "no-tco"
 
+verboseErrorsOpt :: String
 verboseErrorsOpt = "verbose-errors"
 
+outputOpt :: String
 outputOpt = "output"
 
+commentsOpt :: String
 commentsOpt = "comments"
 
+noPrefixOpt :: String
 noPrefixOpt = "no-prefix"
 
+requirePathOpt :: String
 requirePathOpt = "require-path"
 
+srcOpt :: String
 srcOpt = "src"
 
+ffiOpt :: String
 ffiOpt = "ffi"
 
 newtype Options

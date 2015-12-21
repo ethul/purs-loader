@@ -10,11 +10,11 @@
   },
   "scripts": {
     "build": "npm run-script build:compile && npm run-script build:docs && npm run-script build:package",
-    "build:compile": "./node_modules/.bin/pulp build -o build",
-    "build:docs": "./node_modules/.bin/pulp docs",
-    "build:package": "./node_modules/.bin/webpack --progress --colors --profile --bail",
-    "build:watch": "./node_modules/.bin/pulp -w build -o build",
-    "build:json": "./node_modules/.bin/webpack --progress --colors --profile --bail --json > index.json",
+    "build:compile": "pulp build -o build",
+    "build:docs": "pulp docs",
+    "build:package": "webpack --progress --colors --profile --bail",
+    "build:watch": "pulp -w build -o build",
+    "build:json": "webpack --progress --colors --profile --bail --json > index.json",
     "prepublish": "npm run-script build"
   },
   "files": [
