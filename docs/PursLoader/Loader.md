@@ -3,7 +3,7 @@
 #### `Effects`
 
 ``` purescript
-type Effects eff = (cp :: ChildProcess, fs :: FS, glob :: Glob, loader :: Loader, err :: EXCEPTION | eff)
+type Effects eff = (loader :: Loader | eff)
 ```
 
 #### `loader`

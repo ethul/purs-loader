@@ -10,10 +10,10 @@
   },
   "scripts": {
     "build": "npm run-script build:compile && npm run-script build:docs && npm run-script build:package",
-    "build:compile": "pulp build -o build",
+    "build:compile": "pulp build -o build --force",
     "build:docs": "pulp docs",
     "build:package": "webpack --progress --colors --profile --bail",
-    "build:watch": "pulp -w build -o build",
+    "build:watch": "pulp -w build -o build --force",
     "build:json": "webpack --progress --colors --profile --bail --json > index.json",
     "prepublish": "npm run-script build"
   },
@@ -21,7 +21,6 @@
     "index.js"
   ],
   "devDependencies": {
-    "pulp": "^4.3.0",
     "webpack": "^1.8.4"
   },
   "dependencies": {
