@@ -1,7 +1,7 @@
-module Test (test, testing) where
+module Test (testing) where
 
-import Prelude
+bar = "c"
 
-test = "a"
+goo = "a"
 
 foreign import testing :: String

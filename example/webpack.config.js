@@ -1,14 +1,14 @@
-var path = require('path');
+'use strict';
 
-var srcs = ['src[]=bower_components/purescript-*/src/**/*.purs', 'src[]=src/**/*.purs'];
+var PurescriptWebpackPlugin = require('purescript-webpack-plugin');
 
-var ffis = ['ffi[]=bower_components/purescript-*/src/**/*.js', 'ffi[]=src/**/*FFI.js'];
+var src = ['bower_components/purescript-*/src/**/*.purs', 'src/**/*.purs'];
 
-var output = 'output';
+var ffi = ['bower_components/purescript-*/src/**/*.js', 'src/**/*FFI.js'];
 
 var modulesDirectories = [
   'node_modules',
-  'bower_components/purescript-prelude/src'
+  'bower_components'
 ];
 
 var config
@@ -18,12 +18,10 @@ var config
               , filename: 'bundle.js'
               }
     , module: { loaders: [ { test: /\.purs$/
-                           , loader: 'purs-loader?output=' + output + '&' + srcs.concat(ffis).join('&')
+                           , loader: 'purs-loader'
                            } ] }
-    , resolve: { modulesDirectories: modulesDirectories
-               , extensions: ['', '.js']
-               }
-    , resolveLoader: { root: path.join(__dirname, 'node_modules') }
+    , resolve: { modulesDirectories: modulesDirectories }
+    , plugins: [ new PurescriptWebpackPlugin({src: src, ffi: ffi}) ]
     }
     ;
 

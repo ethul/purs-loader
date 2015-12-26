@@ -3,15 +3,16 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "build": "mkdir -p output && ./node_modules/.bin/webpack --progress --colors",
-    "build:watch": "mkdir -p output && ./node_modules/.bin/webpack --progress --colors --watch",
+    "build": "webpack --progress --colors --bail",
+    "build:watch": "webpack --progress --colors --watch",
     "run": "node bundle.js",
     "clean": "rm -rf bower_components && rm -rf bundle.js && rm -rf node_modules && rm -rf output"
   },
   "license": "MIT",
   "devDependencies": {
     "node-libs-browser": "^0.5.2",
+    "purescript-webpack-plugin": "^0.1.0",
     "purs-loader": "file:../",
-    "webpack": "^1.10.1"
+    "webpack": "^1.12.9"
   }
 }

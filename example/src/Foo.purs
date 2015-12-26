@@ -1,9 +1,9 @@
-module Foo (foo) where
+module Foo where
 
 import Prelude
 
 import qualified Foo.Bar as B
 
-foo = "b"
+foo = "A"
 
-foo' = "c"
+bar = "B"

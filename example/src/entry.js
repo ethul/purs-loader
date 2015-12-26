@@ -1,4 +1,4 @@
-var Prelude = require('Prelude');
+var Prelude = require('purescript-prelude/src/Prelude.purs');
 
 var test = require('./Test.purs');
 
