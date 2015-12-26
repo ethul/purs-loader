@@ -54,7 +54,7 @@ loader ref source = do
 
       resourceDir = dirname (resourcePath ref)
 
-      modulePath = (\opts -> relative resourceDir opts.pscBundle) <$> options
+      modulePath = (\opts -> relative resourceDir opts.bundleOutput) <$> options
 
       result = (\path name -> "module.exports = require('" ++ path ++ "')['" ++ name ++ "'];") <$> modulePath <*> moduleName
 
