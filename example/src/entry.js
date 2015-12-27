@@ -6,4 +6,6 @@ var foo = require('./Foo.purs');
 
 var baz = require('./Foo/Baz.purs');
 
-console.log(Prelude, test, foo, baz);
+var bar = require('./bar');
+
+console.log(Prelude, test, foo, baz, bar);
