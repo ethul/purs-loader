@@ -1,5 +1,5 @@
 var x = 'a';
 
-var abcde = require('./Bar.purs');
+var abcde = require('./Bar');
 
 module.exports = abcde;

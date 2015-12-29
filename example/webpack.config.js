@@ -20,7 +20,7 @@ var config
     , module: { loaders: [ { test: /\.purs$/
                            , loader: 'purs-loader'
                            } ] }
-    , resolve: { modulesDirectories: modulesDirectories }
+    , resolve: { modulesDirectories: modulesDirectories, extensions: [ '', '.js', '.purs'] }
     , plugins: [ new PurescriptWebpackPlugin({src: src, ffi: ffi}) ]
     }
     ;
