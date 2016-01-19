@@ -1,6 +1,7 @@
 module PursLoader.LoaderRef
   ( LoaderRef()
   , Loader()
+  , AsyncCallback()
   , async
   , cacheable
   , query
@@ -17,16 +18,18 @@ import Control.Monad.Eff.Exception (Error())
 import Data.Function (Fn3(), runFn3)
 import Data.Maybe (Maybe(), fromMaybe, isJust)
 
+type AsyncCallback eff = Maybe Error -> String -> Eff (loader :: Loader | eff) Unit
+
 data LoaderRef
 
 foreign import data Loader :: !
 
-foreign import asyncFn :: forall eff a. Fn3 (Maybe Error -> Boolean)
-                                            (Error -> Maybe Error -> Error)
-                                            LoaderRef
-                                            (Eff (loader :: Loader | eff) (Maybe Error -> a -> Eff (loader :: Loader | eff) Unit))
+foreign import asyncFn :: forall eff. Fn3 (Maybe Error -> Boolean)
+                                          (Error -> Maybe Error -> Error)
+                                          LoaderRef
+                                          (Eff (loader :: Loader | eff) (AsyncCallback eff))
 
-async :: forall eff a. LoaderRef -> Eff (loader :: Loader | eff) (Maybe Error -> a -> Eff (loader :: Loader | eff) Unit)
+async :: forall eff. LoaderRef -> Eff (loader :: Loader | eff) (Maybe Error -> String -> Eff (loader :: Loader | eff) Unit)
 async ref = runFn3 asyncFn isJust fromMaybe ref
 
 foreign import cacheable :: forall eff. LoaderRef -> Eff (loader :: Loader | eff) Unit

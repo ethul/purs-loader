@@ -1,5 +1,11 @@
 ## Module PursLoader.LoaderRef
 
+#### `AsyncCallback`
+
+``` purescript
+type AsyncCallback eff = Maybe Error -> String -> Eff (loader :: Loader | eff) Unit
+```
+
 #### `LoaderRef`
 
 ``` purescript
@@ -15,7 +21,7 @@ data Loader :: !
 #### `async`
 
 ``` purescript
-async :: forall eff a. LoaderRef -> Eff (loader :: Loader | eff) (Maybe Error -> a -> Eff (loader :: Loader | eff) Unit)
+async :: forall eff. LoaderRef -> Eff (loader :: Loader | eff) (Maybe Error -> String -> Eff (loader :: Loader | eff) Unit)
 ```
 
 #### `cacheable`

@@ -1,4 +1,5 @@
 .psci
+.pulp-cache
 npm-debug.log
 index.json
 index.js
@@ -9,3 +10,4 @@ example/bundle.js
 example/node_modules/
 example/bower_components/
 example/output/
+tmp/

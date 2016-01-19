@@ -8,31 +8,13 @@ newtype Options
 
 ##### Instances
 ``` purescript
-instance isForeignOptions :: IsForeign Options
+IsForeign Options
 ```
 
-#### `output`
+#### `runOptions`
 
 ``` purescript
-output :: Options -> String
-```
-
-#### `pscOptions`
-
-``` purescript
-pscOptions :: Options -> Array String
-```
-
-#### `loaderSrcOption`
-
-``` purescript
-loaderSrcOption :: Foreign -> Maybe (Array String)
-```
-
-#### `loaderFFIOption`
-
-``` purescript
-loaderFFIOption :: Foreign -> Maybe (Array String)
+runOptions :: Options -> Options_
 ```
 
 
