@@ -4,6 +4,7 @@
 
 ``` purescript
 newtype Options
+  = Options { bundleOutput :: String }
 ```
 
 ##### Instances

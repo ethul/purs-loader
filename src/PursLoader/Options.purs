@@ -1,5 +1,5 @@
 module PursLoader.Options
-  ( Options()
+  ( Options(..)
   , runOptions
   ) where
 

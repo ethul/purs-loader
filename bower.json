@@ -3,8 +3,8 @@
   "private": true,
   "dependencies": {
     "purescript-aff": "^0.13.0",
-    "purescript-strings": "^0.7.0",
     "purescript-foreign": "^0.7.0",
-    "purescript-unsafe-coerce": "~0.1.0"
+    "purescript-unsafe-coerce": "~0.1.0",
+    "purescript-nullable": "~0.2.1"
   }
 }
