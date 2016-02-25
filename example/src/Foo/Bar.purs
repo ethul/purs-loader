@@ -1,5 +1,13 @@
-module Foo.Bar (bar) where
+module Foo.Bar (bar, jar, jee) where
 
-bar = "c"
+import Foo.Boz
+
+bar = "u"
 
 bar' = "d"
+
+jam = "c"
+
+jar = "xyzw"
+
+jee = "abcde"
