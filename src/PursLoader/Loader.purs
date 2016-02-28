@@ -71,6 +71,8 @@ loader ref source = do
       debug ("Adding PureScript transitive dependencies for " ++ name')
       addTransitive name'
       foreachE deps addTransitive
+      debug "Generated loader result"
+      debug res
       callback (toMaybe error') res
 
     exports :: Either Error String
