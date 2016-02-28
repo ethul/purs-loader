@@ -34,6 +34,7 @@ import PursLoader.LoaderRef
   , resourcePath
   )
 
+import PursLoader.Debug (debug)
 import PursLoader.LoaderUtil (parseQuery)
 import PursLoader.Options (Options(..))
 import PursLoader.Path (dirname, relative)
@@ -47,6 +48,8 @@ loader ref source = do
 
   cacheable ref
 
+  debug "Invoke PureScript plugin compilation"
+
   pluginContext.compile (compile callback)
   where
   pluginContext :: Plugin.Context (Effects eff)
@@ -56,6 +59,8 @@ loader ref source = do
   compile callback error' { srcMap, ffiMap, graph } = do
     clearDependencies ref
 
+    either (const $ pure unit) (\a -> debug ("Adding PureScript dependency " ++ a)) name
+
     addDependency ref (resourcePath ref)
 
     either (\err -> callback (Just err) "") id
@@ -63,6 +68,7 @@ loader ref source = do
     where
     handle :: String -> Array String -> String -> Eff (Effects eff) Unit
     handle name' deps res = do
+      debug ("Adding PureScript transitive dependencies for " ++ name')
       addTransitive name'
       foreachE deps addTransitive
       callback (toMaybe error') res
