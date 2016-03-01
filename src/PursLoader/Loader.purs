@@ -7,6 +7,7 @@ module PursLoader.Loader
 import Prelude (Unit(), ($), (>>=), (<$>), (<*>), (++), bind, const, id, pure, unit)
 
 import Control.Apply ((*>))
+import Control.Alt ((<|>))
 import Control.Bind (join)
 import Control.Monad.Eff (Eff(), foreachE)
 import Control.Monad.Eff.Exception (Error(), error)
@@ -63,7 +64,7 @@ loader ref source = do
 
     addDependency ref (resourcePath ref)
 
-    either (\err -> callback (Just err) "") id
+    either (\err -> callback (toMaybe error' <|> Just err) "") id
            (handle <$> name <*> dependencies <*> exports)
     where
     handle :: String -> Array String -> String -> Eff (Effects eff) Unit
