@@ -18,7 +18,7 @@ import Data.Function (Fn4(), runFn4)
 import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable())
 
-type Result = { srcMap :: ImmutableMap String String, ffiMap :: ImmutableMap String String, graph :: DependencyGraph }
+type Result = { srcMap :: ImmutableMap String String, ffiMap :: ImmutableMap String String, graph :: DependencyGraph, output :: String }
 
 type Compile eff = Nullable Error -> Result -> Eff eff Unit
 

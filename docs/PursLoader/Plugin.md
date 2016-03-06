@@ -3,7 +3,7 @@
 #### `Result`
 
 ``` purescript
-type Result = { srcMap :: ImmutableMap String String, ffiMap :: ImmutableMap String String, graph :: DependencyGraph }
+type Result = { srcMap :: ImmutableMap String String, ffiMap :: ImmutableMap String String, graph :: DependencyGraph, output :: String }
 ```
 
 #### `Compile`

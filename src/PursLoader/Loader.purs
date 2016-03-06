@@ -1,25 +1,30 @@
 module PursLoader.Loader
   ( Effects()
+  , Effects_()
   , loader
   , loaderFn
   ) where
 
-import Prelude (Unit(), ($), (>>=), (<$>), (<*>), (++), bind, const, id, pure, unit)
+import Prelude (Unit(), ($), (>>=), (<$>), (<*>), (++), bind, const, id, pure, void, unit)
 
 import Control.Apply ((*>))
-import Control.Alt ((<|>))
 import Control.Bind (join)
 import Control.Monad.Eff (Eff(), foreachE)
-import Control.Monad.Eff.Exception (Error(), error)
+import Control.Monad.Eff.Console (CONSOLE())
+import Control.Monad.Eff.Exception (EXCEPTION(), Error(), error, message)
 
 import Data.Array ((!!))
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..), either)
 import Data.Foreign.Class (read)
 import Data.Function (Fn2(), mkFn2)
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(), maybe)
 import Data.Nullable (toMaybe)
 import Data.String.Regex (Regex(), match, noFlags, regex)
+
+import Node.Encoding (Encoding(UTF8))
+import Node.Process (stderr)
+import Node.Stream (writeString)
 
 import Unsafe.Coerce (unsafeCoerce)
 
@@ -41,9 +46,11 @@ import PursLoader.Options (Options(..))
 import PursLoader.Path (dirname, relative)
 import PursLoader.Plugin as Plugin
 
-type Effects eff = (loader :: Loader | eff)
+type Effects eff = (console :: CONSOLE, err :: EXCEPTION | eff)
 
-loader :: forall eff. LoaderRef -> String -> Eff (Effects eff) Unit
+type Effects_ eff = Effects (loader :: Loader | eff)
+
+loader :: forall eff. LoaderRef -> String -> Eff (Effects_ eff) Unit
 loader ref source = do
   callback <- async ref
 
@@ -53,28 +60,35 @@ loader ref source = do
 
   pluginContext.compile (compile callback)
   where
-  pluginContext :: Plugin.Context (Effects eff)
+  pluginContext :: Plugin.Context (Effects_ eff)
   pluginContext = (unsafeCoerce ref).purescriptWebpackPluginContext
 
-  compile :: AsyncCallback eff -> Plugin.Compile (Effects eff)
-  compile callback error' { srcMap, ffiMap, graph } = do
+  compile :: AsyncCallback (Effects eff) -> Plugin.Compile (Effects_ eff)
+  compile callback error' { srcMap, ffiMap, graph, output } = do
     clearDependencies ref
 
     either (const $ pure unit) (\a -> debug ("Adding PureScript dependency " ++ a)) name
 
     addDependency ref (resourcePath ref)
 
-    either (\err -> callback (toMaybe error' <|> Just err) "") id
+    void $ writeString stderr UTF8 output (pure unit)
+
+    maybe (pure unit) (\a -> void $ writeString stderr UTF8 (message a) (pure unit)) (toMaybe error')
+
+    either (const $ callback (pure fixedError) "") id
            (handle <$> name <*> dependencies <*> exports)
     where
-    handle :: String -> Array String -> String -> Eff (Effects eff) Unit
+    fixedError :: Error
+    fixedError = error "PureScript compilation has failed."
+
+    handle :: String -> Array String -> String -> Eff (Effects_ eff) Unit
     handle name' deps res = do
       debug ("Adding PureScript transitive dependencies for " ++ name')
       addTransitive name'
       foreachE deps addTransitive
       debug "Generated loader result"
       debug res
-      callback (toMaybe error') res
+      callback (const fixedError <$> toMaybe error') res
 
     exports :: Either Error String
     exports = (\a b -> "module.exports = require('" ++ a ++ "')['" ++ b ++ "'];") <$> path <*> name
@@ -82,10 +96,10 @@ loader ref source = do
     dependencies :: Either Error (Array String)
     dependencies = name >>= Plugin.dependenciesOf graph
 
-    addTransitive :: String -> Eff (Effects eff) Unit
+    addTransitive :: String -> Eff (Effects_ eff) Unit
     addTransitive dep = addDep (Plugin.get srcMap dep) *> addDep (Plugin.get ffiMap dep)
       where
-      addDep :: Maybe String -> Eff (Effects eff) Unit
+      addDep :: Maybe String -> Eff (Effects_ eff) Unit
       addDep = maybe (pure unit) (addDependency ref)
 
     name :: Either Error String
@@ -107,5 +121,5 @@ loader ref source = do
       resourceDir :: String
       resourceDir = dirname (resourcePath ref)
 
-loaderFn :: forall eff. Fn2 LoaderRef String (Eff (Effects eff) Unit)
+loaderFn :: forall eff. Fn2 LoaderRef String (Eff (Effects_ eff) Unit)
 loaderFn = mkFn2 loader

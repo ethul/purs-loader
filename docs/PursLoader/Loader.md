@@ -3,19 +3,25 @@
 #### `Effects`
 
 ``` purescript
-type Effects eff = (loader :: Loader | eff)
+type Effects eff = (console :: CONSOLE, err :: EXCEPTION | eff)
+```
+
+#### `Effects_`
+
+``` purescript
+type Effects_ eff = Effects (loader :: Loader | eff)
 ```
 
 #### `loader`
 
 ``` purescript
-loader :: forall eff. LoaderRef -> String -> Eff (Effects eff) Unit
+loader :: forall eff. LoaderRef -> String -> Eff (Effects_ eff) Unit
 ```
 
 #### `loaderFn`
 
 ``` purescript
-loaderFn :: forall eff. Fn2 LoaderRef String (Eff (Effects eff) Unit)
+loaderFn :: forall eff. Fn2 LoaderRef String (Eff (Effects_ eff) Unit)
 ```
 
 
