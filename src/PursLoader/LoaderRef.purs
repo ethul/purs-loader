@@ -4,7 +4,6 @@ module PursLoader.LoaderRef
   , AsyncCallback()
   , async
   , cacheable
-  , query
   , clearDependencies
   , addDependency
   , resourcePath
@@ -33,8 +32,6 @@ async :: forall eff. LoaderRef -> Eff (loader :: Loader | eff) (Maybe Error -> S
 async ref = runFn3 asyncFn isJust fromMaybe ref
 
 foreign import cacheable :: forall eff. LoaderRef -> Eff (loader :: Loader | eff) Unit
-
-foreign import query :: LoaderRef -> String
 
 foreign import clearDependencies :: forall eff. LoaderRef -> Eff (loader :: Loader | eff) Unit
 

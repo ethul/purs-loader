@@ -4,7 +4,7 @@ module PursLoader.Loader
   , loaderFn
   ) where
 
-import Prelude (Unit(), ($), (>>=), (<$>), (<*>), (++), bind, const, id, pure, unit)
+import Prelude (Unit(), ($), (>>=), (<$>), (<*>), (++), (<<<), bind, const, id, pure, unit)
 
 import Control.Apply ((*>))
 import Control.Alt ((<|>))
@@ -13,9 +13,7 @@ import Control.Monad.Eff (Eff(), foreachE)
 import Control.Monad.Eff.Exception (Error(), error)
 
 import Data.Array ((!!))
-import Data.Bifunctor (lmap)
 import Data.Either (Either(..), either)
-import Data.Foreign.Class (read)
 import Data.Function (Fn2(), mkFn2)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Nullable (toMaybe)
@@ -29,16 +27,13 @@ import PursLoader.LoaderRef
   , Loader()
   , async
   , cacheable
-  , query
   , clearDependencies
   , addDependency
   , resourcePath
   )
 
 import PursLoader.Debug (debug)
-import PursLoader.LoaderUtil (parseQuery)
-import PursLoader.Options (Options(..))
-import PursLoader.Path (dirname, relative)
+import PursLoader.Path (dirname, joinPath, relative)
 import PursLoader.Plugin as Plugin
 
 type Effects eff = (loader :: Loader | eff)
@@ -77,10 +72,31 @@ loader ref source = do
       callback (toMaybe error') res
 
     exports :: Either Error String
-    exports = (\a b -> "module.exports = require('" ++ a ++ "')['" ++ b ++ "'];") <$> path <*> name
+    exports =
+      if pluginContext.options.bundle
+         then bundleExport <$> name
+         else moduleExport <<< modulePath <$> name
+      where
+      bundleExport :: String -> String
+      bundleExport name' = "module.exports = require('" ++ path ++ "')['" ++ name' ++ "'];"
+        where
+        path :: String
+        path = relative resourceDir pluginContext.options.bundleOutput
+
+      moduleExport :: String -> String
+      moduleExport path = "module.exports = require('" ++ path ++ "');"
+
+      modulePath :: String -> String
+      modulePath = relative resourceDir <<< joinPath pluginContext.options.output
+
+      resourceDir :: String
+      resourceDir = dirname (resourcePath ref)
 
     dependencies :: Either Error (Array String)
-    dependencies = name >>= Plugin.dependenciesOf graph
+    dependencies =
+      if pluginContext.options.bundle
+         then name >>= Plugin.dependenciesOf graph
+         else pure []
 
     addTransitive :: String -> Eff (Effects eff) Unit
     addTransitive dep = addDep (Plugin.get srcMap dep) *> addDep (Plugin.get ffiMap dep)
@@ -95,17 +111,6 @@ loader ref source = do
       where
       re :: Regex
       re = regex "(?:^|\\n)module\\s+([\\w\\.]+)" noFlags { ignoreCase = true }
-
-    path :: Either Error String
-    path = (\(Options opts) -> relative resourceDir opts.bundleOutput) <$> options
-      where
-      options :: Either Error Options
-      options =
-        lmap (const $ error "Failed to parse loader query")
-             (read $ parseQuery (query ref))
-
-      resourceDir :: String
-      resourceDir = dirname (resourcePath ref)
 
 loaderFn :: forall eff. Fn2 LoaderRef String (Eff (Effects eff) Unit)
 loaderFn = mkFn2 loader

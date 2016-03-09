@@ -15,7 +15,13 @@ type Compile eff = Nullable Error -> Result -> Eff eff Unit
 #### `Context`
 
 ``` purescript
-type Context eff = { compile :: Compile eff -> Eff eff Unit }
+type Context eff = { compile :: Compile eff -> Eff eff Unit, options :: Options }
+```
+
+#### `Options`
+
+``` purescript
+type Options = { bundle :: Boolean, output :: String, bundleOutput :: String }
 ```
 
 #### `get`

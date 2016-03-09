@@ -2,6 +2,7 @@ module PursLoader.Plugin
   ( Result()
   , Compile()
   , Context()
+  , Options()
   , ImmutableMap()
   , DependencyGraph()
   , get
@@ -22,7 +23,9 @@ type Result = { srcMap :: ImmutableMap String String, ffiMap :: ImmutableMap Str
 
 type Compile eff = Nullable Error -> Result -> Eff eff Unit
 
-type Context eff = { compile :: Compile eff -> Eff eff Unit }
+type Context eff = { compile :: Compile eff -> Eff eff Unit, options :: Options }
+
+type Options = { bundle :: Boolean, output :: String, bundleOutput :: String }
 
 get :: forall key value. ImmutableMap key value -> key -> Maybe value
 get = runFn4 getFn Nothing Just

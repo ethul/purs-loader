@@ -21,10 +21,6 @@ function cacheable(ref){
   };
 }
 
-function query(ref){
-  return ref.query;
-}
-
 function clearDependencies(ref){
   return function(){
     return ref.clearDependencies();
