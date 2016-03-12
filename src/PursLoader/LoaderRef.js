@@ -21,10 +21,6 @@ function cacheable(ref){
   };
 }
 
-function query(ref){
-  return ref.query;
-}
-
 function clearDependencies(ref){
   return function(){
     return ref.clearDependencies();
@@ -46,8 +42,6 @@ function addDependency(ref){
 exports.asyncFn = asyncFn;
 
 exports.cacheable = cacheable;
-
-exports.query = query;
 
 exports.clearDependencies = clearDependencies;
 

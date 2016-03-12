@@ -30,12 +30,6 @@ async :: forall eff. LoaderRef -> Eff (loader :: Loader | eff) (Maybe Error -> S
 cacheable :: forall eff. LoaderRef -> Eff (loader :: Loader | eff) Unit
 ```
 
-#### `query`
-
-``` purescript
-query :: LoaderRef -> String
-```
-
 #### `clearDependencies`
 
 ``` purescript

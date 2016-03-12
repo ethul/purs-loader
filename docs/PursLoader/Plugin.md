@@ -1,39 +1,27 @@
 ## Module PursLoader.Plugin
 
-#### `Result`
-
-``` purescript
-type Result = { srcMap :: ImmutableMap String String, ffiMap :: ImmutableMap String String, graph :: DependencyGraph }
-```
-
 #### `Compile`
 
 ``` purescript
-type Compile eff = Nullable Error -> Result -> Eff eff Unit
+type Compile eff = Nullable Error -> DependencyGraph -> Eff eff Unit
 ```
 
 #### `Context`
 
 ``` purescript
-type Context eff = { compile :: Compile eff -> Eff eff Unit }
+type Context eff = { compile :: Compile eff -> Eff eff Unit, options :: Options }
 ```
 
-#### `get`
+#### `Options`
 
 ``` purescript
-get :: forall key value. ImmutableMap key value -> key -> Maybe value
+type Options = { bundle :: Boolean, output :: String, bundleOutput :: String }
 ```
 
 #### `dependenciesOf`
 
 ``` purescript
 dependenciesOf :: DependencyGraph -> String -> Either Error (Array String)
-```
-
-#### `ImmutableMap`
-
-``` purescript
-data ImmutableMap :: * -> * -> *
 ```
 
 #### `DependencyGraph`
