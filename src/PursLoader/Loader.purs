@@ -6,7 +6,6 @@ module PursLoader.Loader
 
 import Prelude (Unit(), ($), (>>=), (<$>), (<*>), (++), (<<<), bind, const, id, pure, unit)
 
-import Control.Apply ((*>))
 import Control.Alt ((<|>))
 import Control.Bind (join)
 import Control.Monad.Eff (Eff(), foreachE)
@@ -27,7 +26,6 @@ import PursLoader.LoaderRef
   , Loader()
   , async
   , cacheable
-  , clearDependencies
   , addDependency
   , resourcePath
   )
@@ -52,9 +50,7 @@ loader ref source = do
   pluginContext = (unsafeCoerce ref).purescriptWebpackPluginContext
 
   compile :: AsyncCallback eff -> Plugin.Compile (Effects eff)
-  compile callback error' { srcMap, ffiMap, graph } = do
-    clearDependencies ref
-
+  compile callback error' graph = do
     either (const $ pure unit) (\a -> debug ("Adding PureScript dependency " ++ a)) name
 
     addDependency ref (resourcePath ref)
@@ -64,9 +60,8 @@ loader ref source = do
     where
     handle :: String -> Array String -> String -> Eff (Effects eff) Unit
     handle name' deps res = do
-      debug ("Adding PureScript transitive dependencies for " ++ name')
-      addTransitive name'
-      foreachE deps addTransitive
+      debug ("Adding PureScript dependencies for " ++ name')
+      foreachE deps (addDependency ref)
       debug "Generated loader result"
       debug res
       callback (toMaybe error') res
@@ -93,16 +88,7 @@ loader ref source = do
       resourceDir = dirname (resourcePath ref)
 
     dependencies :: Either Error (Array String)
-    dependencies =
-      if pluginContext.options.bundle
-         then name >>= Plugin.dependenciesOf graph
-         else pure []
-
-    addTransitive :: String -> Eff (Effects eff) Unit
-    addTransitive dep = addDep (Plugin.get srcMap dep) *> addDep (Plugin.get ffiMap dep)
-      where
-      addDep :: Maybe String -> Eff (Effects eff) Unit
-      addDep = maybe (pure unit) (addDependency ref)
+    dependencies = Plugin.dependenciesOf graph (resourcePath ref)
 
     name :: Either Error String
     name =

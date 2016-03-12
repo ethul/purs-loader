@@ -43,8 +43,6 @@ exports.asyncFn = asyncFn;
 
 exports.cacheable = cacheable;
 
-exports.query = query;
-
 exports.clearDependencies = clearDependencies;
 
 exports.resourcePath = resourcePath;
