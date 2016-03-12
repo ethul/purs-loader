@@ -15,7 +15,7 @@ import Data.Either (Either(..))
 import Data.Function (Fn4(), runFn4)
 import Data.Nullable (Nullable())
 
-type Compile eff = Nullable Error -> DependencyGraph -> Eff eff Unit
+type Compile eff = Nullable Error -> DependencyGraph -> String -> Eff eff Unit
 
 type Context eff = { compile :: Compile eff -> Eff eff Unit, options :: Options }
 
