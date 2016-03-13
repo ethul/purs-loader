@@ -5,12 +5,12 @@ module PursLoader.Loader
   , loaderFn
   ) where
 
-import Prelude (Unit(), ($), (>>=), (<$>), (<*>), (++), (<<<), bind, const, id, pure, unit, void)
+import Prelude (Unit(), ($), (>>=), (<$>), (<*>), (++), (<<<), bind, const, id, pure, unit)
 
 import Control.Bind (join)
 import Control.Monad.Eff (Eff(), foreachE)
 import Control.Monad.Eff.Console (CONSOLE())
-import Control.Monad.Eff.Exception (EXCEPTION(), Error(), error, message)
+import Control.Monad.Eff.Exception (EXCEPTION(), Error(), error)
 
 import Data.Array ((!!))
 import Data.Either (Either(..), either)
@@ -18,10 +18,6 @@ import Data.Function (Fn2(), mkFn2)
 import Data.Maybe (maybe)
 import Data.Nullable (toMaybe)
 import Data.String.Regex (Regex(), match, noFlags, regex)
-
-import Node.Encoding (Encoding(UTF8))
-import Node.Process (stderr)
-import Node.Stream (writeString)
 
 import Unsafe.Coerce (unsafeCoerce)
 
@@ -57,14 +53,10 @@ loader ref source = do
   pluginContext = (unsafeCoerce ref).purescriptWebpackPluginContext
 
   compile :: AsyncCallback (Effects eff) -> Plugin.Compile (Effects_ eff)
-  compile callback error' graph output = do
+  compile callback error' graph = do
     either (const $ pure unit) (\a -> debug ("Adding PureScript dependency " ++ a)) name
 
     addDependency ref (resourcePath ref)
-
-    void $ writeString stderr UTF8 output (pure unit)
-
-    maybe (pure unit) (\a -> void $ writeString stderr UTF8 (message a) (pure unit)) (toMaybe error')
 
     either (const $ callback (pure fixedError) "") id
            (handle <$> name <*> dependencies <*> exports)
