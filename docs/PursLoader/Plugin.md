@@ -3,7 +3,7 @@
 #### `Compile`
 
 ``` purescript
-type Compile eff = Nullable Error -> DependencyGraph -> String -> Eff eff Unit
+type Compile eff = Nullable Error -> DependencyGraph -> Eff eff Unit
 ```
 
 #### `Context`
