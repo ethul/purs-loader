@@ -21,6 +21,8 @@ import Data.String.Regex (Regex(), match, noFlags, regex)
 
 import Unsafe.Coerce (unsafeCoerce)
 
+import PursLoader.Debug (debug)
+import PursLoader.JsStringEscape (jsStringEscape)
 import PursLoader.LoaderRef
   ( AsyncCallback()
   , LoaderRef()
@@ -30,8 +32,6 @@ import PursLoader.LoaderRef
   , addDependency
   , resourcePath
   )
-
-import PursLoader.Debug (debug)
 import PursLoader.Path (dirname, joinPath, relative)
 import PursLoader.Plugin as Plugin
 
@@ -79,13 +79,13 @@ loader ref source = do
          else moduleExport <<< modulePath <$> name
       where
       bundleExport :: String -> String
-      bundleExport name' = "module.exports = require('" ++ path ++ "')['" ++ name' ++ "'];"
+      bundleExport name' = "module.exports = require('" ++ jsStringEscape path ++ "')['" ++ name' ++ "'];"
         where
         path :: String
         path = relative resourceDir pluginContext.options.bundleOutput
 
       moduleExport :: String -> String
-      moduleExport path = "module.exports = require('" ++ path ++ "');"
+      moduleExport path = "module.exports = require('" ++ jsStringEscape path ++ "');"
 
       modulePath :: String -> String
       modulePath = relative resourceDir <<< joinPath pluginContext.options.output
