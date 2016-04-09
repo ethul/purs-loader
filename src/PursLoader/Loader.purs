@@ -5,7 +5,7 @@ module PursLoader.Loader
   , loaderFn
   ) where
 
-import Prelude (Unit(), ($), (>>=), (<$>), (<*>), (++), (<<<), bind, const, id, pure, unit)
+import Prelude (Unit(), ($), (>>=), (<$>), (<*>), (++), (<<<), bind, const, flip, id, pure, unit)
 
 import Control.Bind (join)
 import Control.Monad.Eff (Eff(), foreachE)
@@ -58,19 +58,16 @@ loader ref source = do
 
     addDependency ref (resourcePath ref)
 
-    either (const $ callback (pure fixedError) "") id
+    either (flip callback "" <<< pure) id
            (handle <$> name <*> dependencies <*> exports)
     where
-    fixedError :: Error
-    fixedError = error "PureScript compilation has failed."
-
     handle :: String -> Array String -> String -> Eff (Effects_ eff) Unit
     handle name' deps res = do
       debug ("Adding PureScript dependencies for " ++ name')
       foreachE deps (addDependency ref)
       debug "Generated loader result"
       debug res
-      callback (const fixedError <$> toMaybe error') res
+      callback (toMaybe error') res
 
     exports :: Either Error String
     exports =
