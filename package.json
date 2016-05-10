@@ -1,30 +1,49 @@
 {
   "name": "purs-loader",
-  "version": "0.6.0",
-  "description": "PureScript loader for webpack",
-  "license": "MIT",
-  "repository": "ethul/purs-loader",
-  "author": {
-    "name": "Eric Thul",
-    "email": "thul.eric@gmail.com"
-  },
-  "scripts": {
-    "build": "npm run-script build:compile && npm run-script build:docs && npm run-script build:package",
-    "build:compile": "pulp build -o build --force",
-    "build:docs": "pulp docs",
-    "build:package": "webpack --progress --colors --profile --bail",
-    "build:watch": "pulp -w build -o build --force",
-    "build:json": "webpack --progress --colors --profile --bail --json > index.json",
-    "prepublish": "npm run-script build"
-  },
+  "version": "1.0.0",
+  "description": "A webpack loader for PureScript.",
+  "main": "index.js",
   "files": [
     "index.js"
   ],
-  "devDependencies": {
-    "webpack": "^1.8.4"
+  "scripts": {
+    "build": "babel src/index.js -o index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/alexmingoia/purs-loader.git"
+  },
+  "keywords": [
+    "loader",
+    "webpack",
+    "purescript",
+    "purs-loader",
+    "purs-loader"
+  ],
+  "author": "Alexander C. Mingoia",
+  "contributors": [
+    "Eric Thul"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/alexmingoia/purs-loader/issues"
+  },
+  "homepage": "https://github.com/alexmingoia/purs-loader#readme",
+  "peerDependencies": {
+    "webpack": ">=1.0.0 <3.0.0",
+    "purescript": ">=0.8.0"
   },
   "dependencies": {
+    "bluebird": "^3.3.5",
+    "chalk": "^1.1.3",
     "debug": "^2.2.0",
-    "js-string-escape": "^1.0.1"
+    "globby": "^4.0.0",
+    "loader-utils": "^0.2.14",
+    "promise-retry": "^1.1.0"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.8.0",
+    "babel-preset-es2015": "^6.6.0"
   }
 }

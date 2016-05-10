@@ -1,9 +1,5 @@
-.psci
-.pulp-cache
-npm-debug.log
-index.json
-index.js
+**DS_Store*
+build/
 node_modules/
 bower_components/
-build/
-tmp/
+/index.js
