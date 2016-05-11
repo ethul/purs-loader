@@ -222,7 +222,7 @@ function rebuild(psModule) {
       if (!Array.isArray(res.result)) {
         return res.resultType === 'success'
                ? resolve(psModule)
-               : reject(res.result)
+               : reject(res)
       }
 
       Promise.map(res.result, (item, i) => {
@@ -232,7 +232,7 @@ function rebuild(psModule) {
       .then(compileMessages => {
         if (res.resultType === 'error') {
           cache.errors = compileMessages
-          reject(res.result)
+          reject(res)
         } else {
           cache.warnings = compileMessages
           resolve(psModule)
