@@ -37,6 +37,8 @@ const webpackConfig = {
 }
 ```
 
+### Options
+
 Default options:
 
 ```javascript
@@ -45,6 +47,7 @@ Default options:
   pscArgs: {},
   pscBundle: 'psc-bundle',
   pscBundleArgs: {},
+  pscIde: false, // instant rebuilds using psc-ide-server (experimental)
   pscIdeColors: false, // defaults to true if psc === 'psa'
   bundleOutput: 'output/bundle.js',
   bundleNamespace: 'PS',
@@ -61,3 +64,8 @@ Default options:
   ],
 }
 ```
+
+### Instant rebuilds (experimental)
+
+Experimental support for instant rebuilds using `psc-ide-server` can be enabled
+via the `pscIde: true` option.

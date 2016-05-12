@@ -25,6 +25,7 @@ module.exports = function purescriptLoader(source, map) {
     pscArgs: {},
     pscBundle: 'psc-bundle',
     pscBundleArgs: {},
+    pscIde: false,
     pscIdeColors: webpackOptions.psc === 'psa' || query.psc === 'psa',
     pscIdeArgs: {},
     bundleOutput: 'output/bundle.js',
@@ -56,7 +57,7 @@ module.exports = function purescriptLoader(source, map) {
     // invalidate loader cache when bundle is marked as invalid (in watch mode)
     this._compiler.plugin('invalid', () => {
       cache = config.purescriptLoaderCache = {
-        rebuild: true,
+        rebuild: options.pscIde,
         deferred: [],
         ideServer: cache.ideServer
       }
@@ -216,13 +217,19 @@ function rebuild(psModule) {
     const ideClient = spawn('psc-ide-client', args)
 
     ideClient.stdout.once('data', data => {
-      const res = JSON.parse(data.toString())
-      debug(res)
+      let res = null
 
-      if (!Array.isArray(res.result)) {
+      try {
+        res = JSON.parse(data.toString())
+        debug(res)
+      } catch (err) {
+        return reject(err)
+      }
+
+      if (res && !Array.isArray(res.result)) {
         return res.resultType === 'success'
                ? resolve(psModule)
-               : reject(res)
+               : reject('psc-ide rebuild failed')
       }
 
       Promise.map(res.result, (item, i) => {
@@ -231,8 +238,15 @@ function rebuild(psModule) {
       })
       .then(compileMessages => {
         if (res.resultType === 'error') {
+          if (res.result.some(item => item.errorCode === 'UnknownModule')) {
+            console.log('Unknown module, attempting full recompile')
+            return compile(psModule)
+              .then(() => request({ command: 'load' }))
+              .then(resolve)
+              .catch(() => reject('psc-ide rebuild failed'))
+          }
           cache.errors = compileMessages
-          reject(res)
+          reject('psc-ide rebuild failed')
         } else {
           cache.warnings = compileMessages
           resolve(psModule)
@@ -251,14 +265,6 @@ function rebuild(psModule) {
     params: {
       file: psModule.srcPath,
     }
-  }).catch(res => {
-    if (res.resultType === 'error') {
-      if (res.result.some(item => item.errorCode === 'UnknownModule')) {
-        console.log('Unknown module, attempting full recompile')
-        return compile(psModule).then(() => request({ command: 'load' }))
-      }
-    }
-    return Promise.resolve(psModule)
   })
 }
 
