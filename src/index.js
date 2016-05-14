@@ -467,6 +467,6 @@ function dargs(obj) {
     else if (Array.isArray(val)) val.forEach(v => args.push(arg, v))
     else args.push(arg, obj[key])
 
-    return args
+    return args.filter(arg => (typeof arg !== 'boolean'))
   }, [])
 }
