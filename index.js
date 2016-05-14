@@ -61,12 +61,12 @@ module.exports = function purescriptLoader(source, map) {
 
     // add psc warnings to webpack compilation warnings
     this._compiler.plugin('after-compile', function (compilation, callback) {
-      if (options.warnings && cache.warnings && cache.warnings.length) {
-        compilation.warnings.unshift('PureScript compilation:\n' + cache.warnings.join(''));
+      if (options.warnings && cache.warnings) {
+        compilation.warnings.unshift('PureScript compilation:\n' + cache.warnings);
       }
 
-      if (cache.errors && cache.errors.length) {
-        compilation.errors.unshift('PureScript compilation:\n' + cache.errors.join('\n'));
+      if (cache.errors) {
+        compilation.errors.unshift('PureScript compilation:\n' + cache.errors);
       }
 
       callback();
@@ -89,6 +89,8 @@ module.exports = function purescriptLoader(source, map) {
     cache: cache
   };
 
+  debug('loader called', psModule.name);
+
   if (options.bundle) {
     cache.bundleModules.push(psModule.name);
   }
@@ -97,7 +99,7 @@ module.exports = function purescriptLoader(source, map) {
     return connectIdeServer(psModule).then(rebuild).then(toJavaScript).then(psModule.load).catch(psModule.reject);
   }
 
-  if (cache.compilation && cache.compilation.length) {
+  if (cache.compilationFinished) {
     return toJavaScript(psModule).then(psModule.load).catch(psModule.reject);
   }
 
@@ -105,7 +107,7 @@ module.exports = function purescriptLoader(source, map) {
   // references to compiled output are valid.
   cache.deferred.push(psModule);
 
-  if (!cache.compilation) {
+  if (!cache.compilationStarted) {
     return compile(psModule).then(function () {
       return Promise.map(cache.deferred, function (psModule) {
         if (_typeof(cache.ideServer) === 'object') cache.ideServer.kill();
@@ -127,7 +129,7 @@ function toJavaScript(psModule) {
   var bundlePath = path.resolve(options.bundleOutput);
   var jsPath = cache.bundle ? bundlePath : psModule.jsPath;
 
-  debug('loading JavaScript for', psModule.srcPath);
+  debug('loading JavaScript for', psModule.name);
 
   return Promise.props({
     js: fs.readFileAsync(jsPath, 'utf8'),
@@ -157,11 +159,9 @@ function compile(psModule) {
   var cache = psModule.cache;
   var stderr = [];
 
-  if (cache.compilation) return Promise.resolve(cache.compilation);
+  if (cache.compilationStarted) return Promise.resolve(psModule);
 
-  cache.compilation = [];
-  cache.warnings = [];
-  cache.errors = [];
+  cache.compilationStarted = true;
 
   var args = dargs(Object.assign({
     _: options.src,
@@ -176,17 +176,21 @@ function compile(psModule) {
 
     var compilation = spawn(options.psc, args);
 
+    compilation.stdout.on('data', function (data) {
+      return stderr.push(data.toString());
+    });
     compilation.stderr.on('data', function (data) {
       return stderr.push(data.toString());
     });
 
     compilation.on('close', function (code) {
       console.log('Finished compiling PureScript.');
+      cache.compilationFinished = true;
       if (code !== 0) {
-        cache.compilation = cache.errors = stderr;
+        cache.errors = stderr.join('');
         reject(true);
       } else {
-        cache.compilation = cache.warnings = stderr;
+        cache.warnings = stderr.join('');
         resolve(psModule);
       }
     });
@@ -240,10 +244,10 @@ function rebuild(psModule) {
                 return reject('psc-ide rebuild failed');
               });
             }
-            cache.errors = compileMessages;
+            cache.errors = compileMessages.join('\n');
             reject('psc-ide rebuild failed');
           } else {
-            cache.warnings = compileMessages;
+            cache.warnings = compileMessages.join('\n');
             resolve(psModule);
           }
         });
@@ -348,7 +352,7 @@ function bundle(options, cache) {
     });
     compilation.on('close', function (code) {
       if (code !== 0) {
-        cache.errors.concat(stderr);
+        cache.errors = (cache.errors || '') + stderr.join('');
         return reject(true);
       }
       cache.bundle = stderr;
@@ -467,6 +471,8 @@ function dargs(obj) {
       return args.push(arg, v);
     });else args.push(arg, obj[key]);
 
-    return args;
+    return args.filter(function (arg) {
+      return typeof arg !== 'boolean';
+    });
   }, []);
 }
