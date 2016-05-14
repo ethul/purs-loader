@@ -65,12 +65,12 @@ module.exports = function purescriptLoader(source, map) {
 
     // add psc warnings to webpack compilation warnings
     this._compiler.plugin('after-compile', (compilation, callback) => {
-      if (options.warnings && cache.warnings && cache.warnings.length) {
-        compilation.warnings.unshift(`PureScript compilation:\n${cache.warnings.join('')}`)
+      if (options.warnings && cache.warnings) {
+        compilation.warnings.unshift(`PureScript compilation:\n${cache.warnings}`)
       }
 
-      if (cache.errors && cache.errors.length) {
-        compilation.errors.unshift(`PureScript compilation:\n${cache.errors.join('\n')}`)
+      if (cache.errors) {
+        compilation.errors.unshift(`PureScript compilation:\n${cache.errors}`)
       }
 
       callback()
@@ -184,16 +184,17 @@ function compile(psModule) {
 
     const compilation = spawn(options.psc, args)
 
+    compilation.stdout.on('data', data => stderr.push(data.toString()))
     compilation.stderr.on('data', data => stderr.push(data.toString()))
 
     compilation.on('close', code => {
       console.log('Finished compiling PureScript.')
       cache.compilationFinished = true
       if (code !== 0) {
-        cache.compilation = cache.errors = stderr
+        cache.errors = stderr.join('')
         reject(true)
       } else {
-        cache.compilation = cache.warnings = stderr
+        cache.warnings = stderr.join('')
         resolve(psModule)
       }
     })
@@ -245,10 +246,10 @@ function rebuild(psModule) {
               .then(resolve)
               .catch(() => reject('psc-ide rebuild failed'))
           }
-          cache.errors = compileMessages
+          cache.errors = compileMessages.join('\n')
           reject('psc-ide rebuild failed')
         } else {
-          cache.warnings = compileMessages
+          cache.warnings = compileMessages.join('\n')
           resolve(psModule)
         }
       })
@@ -346,7 +347,7 @@ function bundle(options, cache) {
     compilation.stderr.on('data', data => stderr.push(data.toString()))
     compilation.on('close', code => {
       if (code !== 0) {
-        cache.errors.concat(stderr)
+        cache.errors = (cache.errors || '') + stderr.join('')
         return reject(true)
       }
       cache.bundle = stderr
