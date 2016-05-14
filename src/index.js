@@ -89,6 +89,8 @@ module.exports = function purescriptLoader(source, map) {
     cache: cache,
   }
 
+  debug('loader called', psModule.name)
+
   if (options.bundle) {
     cache.bundleModules.push(psModule.name)
   }
@@ -101,7 +103,7 @@ module.exports = function purescriptLoader(source, map) {
       .catch(psModule.reject)
   }
 
-  if (cache.compilation && cache.compilation.length) {
+  if (cache.compilationFinished) {
     return toJavaScript(psModule).then(psModule.load).catch(psModule.reject)
   }
 
@@ -109,7 +111,7 @@ module.exports = function purescriptLoader(source, map) {
   // references to compiled output are valid.
   cache.deferred.push(psModule)
 
-  if (!cache.compilation) {
+  if (!cache.compilationStarted) {
     return compile(psModule)
       .then(() => Promise.map(cache.deferred, psModule => {
         if (typeof cache.ideServer === 'object') cache.ideServer.kill()
@@ -129,7 +131,7 @@ function toJavaScript(psModule) {
   const bundlePath = path.resolve(options.bundleOutput)
   const jsPath = cache.bundle ? bundlePath : psModule.jsPath
 
-  debug('loading JavaScript for', psModule.srcPath)
+  debug('loading JavaScript for', psModule.name)
 
   return Promise.props({
     js: fs.readFileAsync(jsPath, 'utf8'),
@@ -165,12 +167,9 @@ function compile(psModule) {
   const cache = psModule.cache
   const stderr = []
 
-  if (cache.compilation) return Promise.resolve(cache.compilation)
+  if (cache.compilationStarted) return Promise.resolve(psModule)
 
-  cache.compilation = []
-  cache.warnings = []
-  cache.errors = []
-
+  cache.compilationStarted = true
 
   const args = dargs(Object.assign({
     _: options.src,
@@ -189,6 +188,7 @@ function compile(psModule) {
 
     compilation.on('close', code => {
       console.log('Finished compiling PureScript.')
+      cache.compilationFinished = true
       if (code !== 0) {
         cache.compilation = cache.errors = stderr
         reject(true)
