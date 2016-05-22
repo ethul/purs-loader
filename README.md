@@ -11,7 +11,7 @@
 Install with [npm](https://npmjs.org/package/purs-loader).
 
 ```
-npm install purs-loader --save-dev
+npm install purs-loader@next --save-dev
 ```
 
 ## Example
@@ -36,6 +36,8 @@ const webpackConfig = {
   // ...
 }
 ```
+
+Refer to the [purescript-webpack-example](https://github.com/ethul/purescript-webpack-example) for a more detailed example.
 
 ### Options
 

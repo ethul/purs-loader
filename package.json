@@ -1,10 +1,13 @@
 {
   "name": "purs-loader",
-  "version": "1.0.0",
+  "version": "1.0.0-rc.0",
   "description": "A webpack loader for PureScript.",
   "main": "index.js",
   "files": [
-    "index.js"
+    "LICENSE",
+    "README.md",
+    "index.js",
+    "src/index.js"
   ],
   "scripts": {
     "build": "babel src/index.js -o index.js",
@@ -13,7 +16,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/alexmingoia/purs-loader.git"
+    "url": "git://github.com/ethul/purs-loader.git"
   },
   "keywords": [
     "loader",
@@ -28,9 +31,9 @@
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/alexmingoia/purs-loader/issues"
+    "url": "https://github.com/ethul/purs-loader/issues"
   },
-  "homepage": "https://github.com/alexmingoia/purs-loader#readme",
+  "homepage": "https://github.com/ethul/purs-loader#readme",
   "peerDependencies": {
     "webpack": ">=1.0.0 <3.0.0",
     "purescript": ">=0.8.0"
