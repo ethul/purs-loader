@@ -216,11 +216,27 @@ function rebuild(psModule) {
     const args = dargs(options.pscIdeArgs)
     const ideClient = spawn('psc-ide-client', args)
 
-    ideClient.stdout.once('data', data => {
+    var stdout = ''
+    var stderr = ''
+
+    ideClient.stdout.on('data', data => {
+      stdout = stdout + data.toString()
+    })
+
+    ideClient.stderr.on('data', data => {
+      stderr = stderr + data.toString()
+    })
+
+    ideClient.on('close', code => {
+      if (code !== 0) {
+        const error = stderr === '' ? 'Failed to spawn psc-ide-client' : stderr
+        return reject(new Error(error))
+      }
+
       let res = null
 
       try {
-        res = JSON.parse(data.toString())
+        res = JSON.parse(stdout.toString())
         debug(res)
       } catch (err) {
         return reject(err)
@@ -253,8 +269,6 @@ function rebuild(psModule) {
         }
       })
     })
-
-    ideClient.stderr.once('data', data => reject(data.toString()))
 
     ideClient.stdin.write(JSON.stringify(body))
     ideClient.stdin.write('\n')
