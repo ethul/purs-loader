@@ -6,7 +6,7 @@ const loaderUtils = require('loader-utils')
 const globby = require('globby')
 const Promise = require('bluebird')
 const fs = Promise.promisifyAll(require('fs'))
-const spawn = require('child_process').spawn
+const spawn = require('cross-spawn')
 const path = require('path')
 const retryPromise = require('promise-retry')
 
