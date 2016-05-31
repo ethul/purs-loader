@@ -12,6 +12,8 @@ Install with [npm](https://npmjs.org/package/purs-loader).
 
 ```
 npm install purs-loader --save-dev
+
+npm install purs-loader@next --save-dev
 ```
 
 ## Example
@@ -27,8 +29,7 @@ const webpackConfig = {
       exclude: /node_modules/,
       query: {
         psc: 'psa',
-        src: ['bower_components/purescript-*/src/**/*.purs', 'src/**/*.purs'],
-        ffi: ['bower_components/purescript-*/src/**/*.js', 'src/**/*.js'],
+        src: ['bower_components/purescript-*/src/**/*.purs', 'src/**/*.purs']
       }
     }
     // ...
@@ -59,11 +60,7 @@ Default options:
   src: [
     path.join('src', '**', '*.purs'),
     path.join('bower_components', 'purescript-*', 'src', '**', '*.purs')
-  ],
-  ffi: [
-    path.join('src', '**', '*.js'),
-    path.join('bower_components', 'purescript-*', 'src', '**', '*.js')
-  ],
+  ]
 }
 ```
 
