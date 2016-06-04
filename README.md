@@ -11,7 +11,7 @@
 Install with [npm](https://npmjs.org/package/purs-loader).
 
 ```
-npm install purs-loader@next --save-dev
+npm install purs-loader --save-dev
 ```
 
 ## Example
