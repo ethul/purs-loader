@@ -11,7 +11,6 @@ const path = require('path')
 const retryPromise = require('promise-retry')
 const jsStringEscape = require('js-string-escape')
 
-const ffiModuleRegex = /\/\/\s+module\s+([\w\.]+)/i
 const srcModuleRegex = /(?:^|\n)module\s+([\w\.]+)/i
 const requireRegex = /require\(['"]\.\.\/([\w\.]+)['"]\)/g
 
@@ -38,11 +37,7 @@ module.exports = function purescriptLoader(source, map) {
     src: [
       path.join('src', '**', '*.purs'),
       path.join('bower_components', 'purescript-*', 'src', '**', '*.purs')
-    ],
-    ffi: [
-      path.join('src', '**', '*.js'),
-      path.join('bower_components', 'purescript-*', 'src', '**', '*.js')
-    ],
+    ]
   }, webpackOptions, query)
 
   this.cacheable && this.cacheable()
@@ -173,7 +168,6 @@ function compile(psModule) {
 
   const args = dargs(Object.assign({
     _: options.src,
-    ffi: options.ffi,
     output: options.output,
   }, options.pscArgs))
 
@@ -374,26 +368,37 @@ function bundle(options, cache) {
 function psModuleMap(options, cache) {
   if (cache.psModuleMap) return Promise.resolve(cache.psModuleMap)
 
-  const globs = [].concat(options.src).concat(options.ffi)
+  const globs = [].concat(options.src);
+
+  function pursToJs(file){
+    const dirname = path.dirname(file)
+    const basename = path.basename(file, '.purs')
+    const fileJS = path.join(dirname, `${basename}.js`)
+    return fileJS
+  }
 
   return globby(globs).then(paths => {
     return Promise
       .props(paths.reduce((map, file) => {
+        const fileJS = pursToJs(file)
         map[file] = fs.readFileAsync(file, 'utf8')
+        map[fileJS] = fs.readFileAsync(fileJS, 'utf8').catch(() => undefined)
         return map
       }, {}))
       .then(fileMap => {
         cache.psModuleMap = Object.keys(fileMap).reduce((map, file) => {
-          const source = fileMap[file]
           const ext = path.extname(file)
           const isPurs = ext.match(/purs$/i)
-          const moduleRegex = isPurs ? srcModuleRegex : ffiModuleRegex
-          const moduleName = match(moduleRegex, source)
-          map[moduleName] = map[moduleName] || {}
           if (isPurs) {
+            const fileJs = pursToJs(file)
+            const source = fileMap[file]
+            const ffi = fileMap[fileJs]
+            const moduleName = match(srcModuleRegex, source)
+            map[moduleName] = map[moduleName] || {}
             map[moduleName].src = path.resolve(file)
-          } else {
-            map[moduleName].ffi = path.resolve(file)
+            if (ffi) {
+              map[moduleName].ffi = path.resolve(fileJs)
+            }
           }
           return map
         }, {})

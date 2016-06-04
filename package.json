@@ -1,6 +1,6 @@
 {
   "name": "purs-loader",
-  "version": "1.0.0",
+  "version": "2.0.0-rc.0",
   "description": "A webpack loader for PureScript.",
   "main": "index.js",
   "files": [
@@ -34,10 +34,6 @@
     "url": "https://github.com/ethul/purs-loader/issues"
   },
   "homepage": "https://github.com/ethul/purs-loader#readme",
-  "peerDependencies": {
-    "webpack": ">=1.0.0 <3.0.0",
-    "purescript": ">=0.8.0"
-  },
   "dependencies": {
     "bluebird": "^3.3.5",
     "chalk": "^1.1.3",
