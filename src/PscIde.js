@@ -178,54 +178,60 @@ function rebuild(psModule) {
 module.exports.rebuild = rebuild;
 
 function formatIdeResult(result, options, index, length) {
-  const srcPath = path.relative(options.context, result.filename)
-  const pos = result.position
-  const fileAndPos = `${srcPath}:${pos.startLine}:${pos.startColumn}`
   let numAndErr = `[${index+1}/${length} ${result.errorCode}]`
   numAndErr = options.pscIdeColors ? colors.yellow(numAndErr) : numAndErr
 
-  return fs.readFileAsync(result.filename, 'utf8').then(source => {
-    const lines = source.split('\n').slice(pos.startLine - 1, pos.endLine)
-    const endsOnNewline = pos.endColumn === 1 && pos.startLine !== pos.endLine
-    const up = options.pscIdeColors ? colors.red('^') : '^'
-    const down = options.pscIdeColors ? colors.red('v') : 'v'
-    let trimmed = lines.slice(0)
+  function makeResult() {
+    return Promise.resolve(`\n${numAndErr} ${result.message}`)
+  }
 
-    if (endsOnNewline) {
-      lines.splice(lines.length - 1, 1)
-      pos.endLine = pos.endLine - 1
-      pos.endColumn = lines[lines.length - 1].length || 1
-    }
+  function makeResultSnippet(filename, pos) {
+    const srcPath = path.relative(options.context, filename);
+    const fileAndPos = `${srcPath}:${pos.startLine}:${pos.startColumn}`
 
-    // strip newlines at the end
-    if (endsOnNewline) {
-      trimmed = lines.reverse().reduce((trimmed, line, i) => {
-        if (i === 0 && line === '') trimmed.trimming = true
-        if (!trimmed.trimming) trimmed.push(line)
-        if (trimmed.trimming && line !== '') {
-          trimmed.trimming = false
-          trimmed.push(line)
-        }
-        return trimmed
-      }, []).reverse()
-      pos.endLine = pos.endLine - (lines.length - trimmed.length)
-      pos.endColumn = trimmed[trimmed.length - 1].length || 1
-    }
+    return fs.readFileAsync(filename, 'utf8').then(source => {
+      const lines = source.split('\n').slice(pos.startLine - 1, pos.endLine)
+      const endsOnNewline = pos.endColumn === 1 && pos.startLine !== pos.endLine
+      const up = options.pscIdeColors ? colors.red('^') : '^'
+      const down = options.pscIdeColors ? colors.red('v') : 'v'
+      let trimmed = lines.slice(0)
 
-    const spaces = ' '.repeat(String(pos.endLine).length)
-    let snippet = trimmed.map((line, i) => {
-      return `  ${pos.startLine + i}  ${line}`
-    }).join('\n')
+      if (endsOnNewline) {
+        lines.splice(lines.length - 1, 1)
+        pos.endLine = pos.endLine - 1
+        pos.endColumn = lines[lines.length - 1].length || 1
+      }
 
-    if (trimmed.length === 1) {
-      snippet += `\n  ${spaces}  ${' '.repeat(pos.startColumn - 1)}${up.repeat(pos.endColumn - pos.startColumn + 1)}`
-    } else {
-      snippet = `  ${spaces}  ${' '.repeat(pos.startColumn - 1)}${down}\n${snippet}`
-      snippet += `\n  ${spaces}  ${' '.repeat(pos.endColumn - 1)}${up}`
-    }
+      // strip newlines at the end
+      if (endsOnNewline) {
+        trimmed = lines.reverse().reduce((trimmed, line, i) => {
+          if (i === 0 && line === '') trimmed.trimming = true
+          if (!trimmed.trimming) trimmed.push(line)
+          if (trimmed.trimming && line !== '') {
+            trimmed.trimming = false
+            trimmed.push(line)
+          }
+          return trimmed
+        }, []).reverse()
+        pos.endLine = pos.endLine - (lines.length - trimmed.length)
+        pos.endColumn = trimmed[trimmed.length - 1].length || 1
+      }
 
-    return Promise.resolve(
-      `\n${numAndErr} ${fileAndPos}\n\n${snippet}\n\n${result.message}`
-    )
-  })
+      const spaces = ' '.repeat(String(pos.endLine).length)
+      let snippet = trimmed.map((line, i) => {
+        return `  ${pos.startLine + i}  ${line}`
+      }).join('\n')
+
+      if (trimmed.length === 1) {
+        snippet += `\n  ${spaces}  ${' '.repeat(pos.startColumn - 1)}${up.repeat(pos.endColumn - pos.startColumn + 1)}`
+      } else {
+        snippet = `  ${spaces}  ${' '.repeat(pos.startColumn - 1)}${down}\n${snippet}`
+        snippet += `\n  ${spaces}  ${' '.repeat(pos.endColumn - 1)}${up}`
+      }
+
+      return Promise.resolve(`\n${numAndErr} ${fileAndPos}\n\n${snippet}\n\n${result.message}`)
+    })
+  }
+
+  return result.filename && result.position ? makeResultSnippet(result.filename, result.position) : makeResult();
 }
