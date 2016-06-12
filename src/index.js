@@ -1,17 +1,16 @@
 'use strict'
 
-const colors = require('chalk')
 const debug = require('debug')('purs-loader')
 const loaderUtils = require('loader-utils')
-const globby = require('globby')
 const Promise = require('bluebird')
 const fs = Promise.promisifyAll(require('fs'))
-const spawn = require('cross-spawn')
 const path = require('path')
-const retryPromise = require('promise-retry')
 const jsStringEscape = require('js-string-escape')
+const PsModuleMap = require('./PsModuleMap');
+const Psc = require('./Psc');
+const PscIde = require('./PscIde');
+const dargs = require('./dargs');
 
-const srcModuleRegex = /(?:^|\n)module\s+([\w\.]+)/i
 const requireRegex = /require\(['"]\.\.\/([\w\.]+)['"]\)/g
 
 module.exports = function purescriptLoader(source, map) {
@@ -45,7 +44,7 @@ module.exports = function purescriptLoader(source, map) {
   let cache = config.purescriptLoaderCache = config.purescriptLoaderCache || {
     rebuild: false,
     deferred: [],
-    bundleModules: [],
+    bundleModules: []
   }
 
   if (!config.purescriptLoaderInstalled) {
@@ -53,10 +52,14 @@ module.exports = function purescriptLoader(source, map) {
 
     // invalidate loader cache when bundle is marked as invalid (in watch mode)
     this._compiler.plugin('invalid', () => {
+      debug('invalidating loader cache');
+
       cache = config.purescriptLoaderCache = {
         rebuild: options.pscIde,
         deferred: [],
-        ideServer: cache.ideServer
+        bundleModules: [],
+        ideServer: cache.ideServer,
+        psModuleMap: cache.psModuleMap
       }
     })
 
@@ -74,7 +77,7 @@ module.exports = function purescriptLoader(source, map) {
     })
   }
 
-  const psModuleName = match(srcModuleRegex, source)
+  const psModuleName = PsModuleMap.match(source)
   const psModule = {
     name: psModuleName,
     load: js => callback(null, js),
@@ -93,8 +96,8 @@ module.exports = function purescriptLoader(source, map) {
   }
 
   if (cache.rebuild) {
-    return connectIdeServer(psModule)
-      .then(rebuild)
+    return PscIde.connect(psModule)
+      .then(PscIde.rebuild)
       .then(toJavaScript)
       .then(psModule.load)
       .catch(psModule.reject)
@@ -109,7 +112,11 @@ module.exports = function purescriptLoader(source, map) {
   cache.deferred.push(psModule)
 
   if (!cache.compilationStarted) {
-    return compile(psModule)
+    return Psc.compile(psModule)
+       .then(() => PsModuleMap.makeMap(options.src).then(map => {
+         debug('rebuilt module map');
+         cache.psModuleMap = map;
+       }))
       .then(() => Promise.map(cache.deferred, psModule => {
         if (typeof cache.ideServer === 'object') cache.ideServer.kill()
         return toJavaScript(psModule).then(psModule.load)
@@ -118,6 +125,26 @@ module.exports = function purescriptLoader(source, map) {
         cache.deferred[0].reject(error)
         cache.deferred.slice(1).forEach(psModule => psModule.reject(true))
       })
+  }
+}
+
+function updatePsModuleMap(psModule) {
+  const options = psModule.options
+  const cache = psModule.cache
+  const filePurs = psModule.srcPath
+  if (!cache.psModuleMap) {
+    debug('module mapping does not exist');
+    return PsModuleMap.makeMap(options.src).then(map => {
+      cache.psModuleMap = map;
+      return cache.psModuleMap;
+    });
+  }
+  else {
+    return PsModuleMap.makeMapEntry(filePurs).then(result => {
+      const map = Object.assign(cache.psModuleMap, result)
+      cache.psModuleMap = map;
+      return cache.psModuleMap;
+    });
   }
 }
 
@@ -132,7 +159,7 @@ function toJavaScript(psModule) {
 
   return Promise.props({
     js: fs.readFileAsync(jsPath, 'utf8'),
-    psModuleMap: psModuleMap(options, cache)
+    psModuleMap: updatePsModuleMap(psModule)
   }).then(result => {
     let js = ''
 
@@ -155,347 +182,4 @@ function toJavaScript(psModule) {
 
     return js
   })
-}
-
-function compile(psModule) {
-  const options = psModule.options
-  const cache = psModule.cache
-  const stderr = []
-
-  if (cache.compilationStarted) return Promise.resolve(psModule)
-
-  cache.compilationStarted = true
-
-  const args = dargs(Object.assign({
-    _: options.src,
-    output: options.output,
-  }, options.pscArgs))
-
-  debug('spawning compiler %s %o', options.psc, args)
-
-  return (new Promise((resolve, reject) => {
-    console.log('\nCompiling PureScript...')
-
-    const compilation = spawn(options.psc, args)
-
-    compilation.stdout.on('data', data => stderr.push(data.toString()))
-    compilation.stderr.on('data', data => stderr.push(data.toString()))
-
-    compilation.on('close', code => {
-      console.log('Finished compiling PureScript.')
-      cache.compilationFinished = true
-      if (code !== 0) {
-        cache.errors = stderr.join('')
-        reject(true)
-      } else {
-        cache.warnings = stderr.join('')
-        resolve(psModule)
-      }
-    })
-  }))
-  .then(compilerOutput => {
-    if (options.bundle) {
-      return bundle(options, cache).then(() => psModule)
-    }
-    return psModule
-  })
-}
-
-function rebuild(psModule) {
-  const options = psModule.options
-  const cache = psModule.cache
-
-  debug('attempting rebuild with psc-ide-client %s', psModule.srcPath)
-
-  const request = (body) => new Promise((resolve, reject) => {
-    const args = dargs(options.pscIdeArgs)
-    const ideClient = spawn('psc-ide-client', args)
-
-    var stdout = ''
-    var stderr = ''
-
-    ideClient.stdout.on('data', data => {
-      stdout = stdout + data.toString()
-    })
-
-    ideClient.stderr.on('data', data => {
-      stderr = stderr + data.toString()
-    })
-
-    ideClient.on('close', code => {
-      if (code !== 0) {
-        const error = stderr === '' ? 'Failed to spawn psc-ide-client' : stderr
-        return reject(new Error(error))
-      }
-
-      let res = null
-
-      try {
-        res = JSON.parse(stdout.toString())
-        debug(res)
-      } catch (err) {
-        return reject(err)
-      }
-
-      if (res && !Array.isArray(res.result)) {
-        return res.resultType === 'success'
-               ? resolve(psModule)
-               : reject('psc-ide rebuild failed')
-      }
-
-      Promise.map(res.result, (item, i) => {
-        debug(item)
-        return formatIdeResult(item, options, i, res.result.length)
-      })
-      .then(compileMessages => {
-        if (res.resultType === 'error') {
-          if (res.result.some(item => item.errorCode === 'UnknownModule')) {
-            console.log('Unknown module, attempting full recompile')
-            return compile(psModule)
-              .then(() => request({ command: 'load' }))
-              .then(resolve)
-              .catch(() => reject('psc-ide rebuild failed'))
-          }
-          cache.errors = compileMessages.join('\n')
-          reject('psc-ide rebuild failed')
-        } else {
-          cache.warnings = compileMessages.join('\n')
-          resolve(psModule)
-        }
-      })
-    })
-
-    ideClient.stdin.write(JSON.stringify(body))
-    ideClient.stdin.write('\n')
-  })
-
-  return request({
-    command: 'rebuild',
-    params: {
-      file: psModule.srcPath,
-    }
-  })
-}
-
-function formatIdeResult(result, options, index, length) {
-  const srcPath = path.relative(options.context, result.filename)
-  const pos = result.position
-  const fileAndPos = `${srcPath}:${pos.startLine}:${pos.startColumn}`
-  let numAndErr = `[${index+1}/${length} ${result.errorCode}]`
-  numAndErr = options.pscIdeColors ? colors.yellow(numAndErr) : numAndErr
-
-  return fs.readFileAsync(result.filename, 'utf8').then(source => {
-    const lines = source.split('\n').slice(pos.startLine - 1, pos.endLine)
-    const endsOnNewline = pos.endColumn === 1 && pos.startLine !== pos.endLine
-    const up = options.pscIdeColors ? colors.red('^') : '^'
-    const down = options.pscIdeColors ? colors.red('v') : 'v'
-    let trimmed = lines.slice(0)
-
-    if (endsOnNewline) {
-      lines.splice(lines.length - 1, 1)
-      pos.endLine = pos.endLine - 1
-      pos.endColumn = lines[lines.length - 1].length || 1
-    }
-
-    // strip newlines at the end
-    if (endsOnNewline) {
-      trimmed = lines.reverse().reduce((trimmed, line, i) => {
-        if (i === 0 && line === '') trimmed.trimming = true
-        if (!trimmed.trimming) trimmed.push(line)
-        if (trimmed.trimming && line !== '') {
-          trimmed.trimming = false
-          trimmed.push(line)
-        }
-        return trimmed
-      }, []).reverse()
-      pos.endLine = pos.endLine - (lines.length - trimmed.length)
-      pos.endColumn = trimmed[trimmed.length - 1].length || 1
-    }
-
-    const spaces = ' '.repeat(String(pos.endLine).length)
-    let snippet = trimmed.map((line, i) => {
-      return `  ${pos.startLine + i}  ${line}`
-    }).join('\n')
-
-    if (trimmed.length === 1) {
-      snippet += `\n  ${spaces}  ${' '.repeat(pos.startColumn - 1)}${up.repeat(pos.endColumn - pos.startColumn + 1)}`
-    } else {
-      snippet = `  ${spaces}  ${' '.repeat(pos.startColumn - 1)}${down}\n${snippet}`
-      snippet += `\n  ${spaces}  ${' '.repeat(pos.endColumn - 1)}${up}`
-    }
-
-    return Promise.resolve(
-      `\n${numAndErr} ${fileAndPos}\n\n${snippet}\n\n${result.message}`
-    )
-  })
-}
-
-function bundle(options, cache) {
-  if (cache.bundle) return Promise.resolve(cache.bundle)
-
-  const stdout = []
-  const stderr = cache.bundle = []
-
-  const args = dargs(Object.assign({
-    _: [path.join(options.output, '*', '*.js')],
-    output: options.bundleOutput,
-    namespace: options.bundleNamespace,
-  }, options.pscBundleArgs))
-
-  cache.bundleModules.forEach(name => args.push('--module', name))
-
-  debug('spawning bundler %s %o', options.pscBundle, args.join(' '))
-
-  return (new Promise((resolve, reject) => {
-    console.log('Bundling PureScript...')
-
-    const compilation = spawn(options.pscBundle, args)
-
-    compilation.stdout.on('data', data => stdout.push(data.toString()))
-    compilation.stderr.on('data', data => stderr.push(data.toString()))
-    compilation.on('close', code => {
-      if (code !== 0) {
-        cache.errors = (cache.errors || '') + stderr.join('')
-        return reject(true)
-      }
-      cache.bundle = stderr
-      resolve(fs.appendFileAsync('output/bundle.js', `module.exports = ${options.bundleNamespace}`))
-    })
-  }))
-}
-
-// map of PS module names to their source path
-function psModuleMap(options, cache) {
-  if (cache.psModuleMap) return Promise.resolve(cache.psModuleMap)
-
-  const globs = [].concat(options.src);
-
-  function pursToJs(file){
-    const dirname = path.dirname(file)
-    const basename = path.basename(file, '.purs')
-    const fileJS = path.join(dirname, `${basename}.js`)
-    return fileJS
-  }
-
-  return globby(globs).then(paths => {
-    return Promise
-      .props(paths.reduce((map, file) => {
-        const fileJS = pursToJs(file)
-        map[file] = fs.readFileAsync(file, 'utf8')
-        map[fileJS] = fs.readFileAsync(fileJS, 'utf8').catch(() => undefined)
-        return map
-      }, {}))
-      .then(fileMap => {
-        cache.psModuleMap = Object.keys(fileMap).reduce((map, file) => {
-          const ext = path.extname(file)
-          const isPurs = ext.match(/purs$/i)
-          if (isPurs) {
-            const fileJs = pursToJs(file)
-            const source = fileMap[file]
-            const ffi = fileMap[fileJs]
-            const moduleName = match(srcModuleRegex, source)
-            map[moduleName] = map[moduleName] || {}
-            map[moduleName].src = path.resolve(file)
-            if (ffi) {
-              map[moduleName].ffi = path.resolve(fileJs)
-            }
-          }
-          return map
-        }, {})
-        return cache.psModuleMap
-      })
-  })
-}
-
-function connectIdeServer(psModule) {
-  const options = psModule.options
-  const cache = psModule.cache
-
-  if (cache.ideServer) return Promise.resolve(psModule)
-
-  cache.ideServer = true
-
-  const connect = () => new Promise((resolve, reject) => {
-    const args = dargs(options.pscIdeArgs)
-
-    debug('attempting to connect to psc-ide-server', args)
-
-    const ideClient = spawn('psc-ide-client', args)
-
-    ideClient.stderr.on('data', data => {
-      debug(data.toString())
-      cache.ideServer = false
-      reject(true)
-    })
-    ideClient.stdout.once('data', data => {
-      debug(data.toString())
-      if (data.toString()[0] === '{') {
-        const res = JSON.parse(data.toString())
-        if (res.resultType === 'success') {
-          cache.ideServer = ideServer
-          resolve(psModule)
-        } else {
-          cache.ideServer = ideServer
-          reject(true)
-        }
-      } else {
-        cache.ideServer = false
-        reject(true)
-      }
-    })
-    ideClient.stdin.resume()
-    ideClient.stdin.write(JSON.stringify({ command: 'load' }))
-    ideClient.stdin.write('\n')
-  })
-
-  const args = dargs(Object.assign({
-    outputDirectory: options.output,
-  }, options.pscIdeArgs))
-
-  debug('attempting to start psc-ide-server', args)
-
-  const ideServer = cache.ideServer = spawn('psc-ide-server', [])
-  ideServer.stderr.on('data', data => {
-    debug(data.toString())
-  })
-
-  return retryPromise((retry, number) => {
-    return connect().catch(error => {
-      if (!cache.ideServer && number === 9) {
-        debug(error)
-
-        console.log(
-          'failed to connect to or start psc-ide-server, ' +
-          'full compilation will occur on rebuild'
-        )
-
-        return Promise.resolve(psModule)
-      }
-
-      return retry(error)
-    })
-  }, {
-    retries: 9,
-    factor: 1,
-    minTimeout: 333,
-    maxTimeout: 333,
-  })
-}
-
-function match(regex, str) {
-  const matches = str.match(regex)
-  return matches && matches[1]
-}
-
-function dargs(obj) {
-  return Object.keys(obj).reduce((args, key) => {
-    const arg = '--' + key.replace(/[A-Z]/g, '-$&').toLowerCase();
-    const val = obj[key]
-
-    if (key === '_') val.forEach(v => args.push(v))
-    else if (Array.isArray(val)) val.forEach(v => args.push(arg, v))
-    else args.push(arg, obj[key])
-
-    return args.filter(arg => (typeof arg !== 'boolean'))
-  }, [])
 }
