@@ -2,15 +2,15 @@
   "name": "purs-loader",
   "version": "2.0.0-rc.0",
   "description": "A webpack loader for PureScript.",
-  "main": "index.js",
+  "main": "lib/index.js",
   "files": [
     "LICENSE",
     "README.md",
-    "index.js",
-    "src/index.js"
+    "src",
+    "lib"
   ],
   "scripts": {
-    "build": "babel src/index.js -o index.js",
+    "build": "babel src --out-dir lib",
     "prepublish": "npm run build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
