@@ -67,10 +67,12 @@ module.exports = function purescriptLoader(source, map) {
     this._compiler.plugin('after-compile', (compilation, callback) => {
       if (options.warnings && cache.warnings) {
         compilation.warnings.unshift(`PureScript compilation:\n${cache.warnings}`)
+        cache.warnings = null;
       }
 
       if (cache.errors) {
         compilation.errors.unshift(`PureScript compilation:\n${cache.errors}`)
+        cache.errors = null;
       }
 
       callback()
