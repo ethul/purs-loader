@@ -86,7 +86,7 @@ function bundle(options, cache) {
         return reject(true)
       }
       cache.bundle = stderr
-      resolve(fs.appendFileAsync('output/bundle.js', `module.exports = ${options.bundleNamespace}`))
+      resolve(fs.appendFileAsync(options.bundleOutput, `module.exports = ${options.bundleNamespace}`))
     })
   }))
 }
