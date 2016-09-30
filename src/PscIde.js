@@ -61,9 +61,9 @@ function connect(psModule) {
     ideClient.stdin.write('\n')
   })
 
-  const args = dargs(Object.assign({
-    outputDirectory: options.output,
-  }, options.pscIdeArgs))
+  const args = dargs({
+    outputDirectory: options.output
+  }).concat(options.pscIdeArgs.split(" "))
 
   debug('attempting to start psc-ide-server', args)
 
@@ -103,7 +103,7 @@ function rebuild(psModule) {
   debug('attempting rebuild with psc-ide-client %s', psModule.srcPath)
 
   const request = (body) => new Promise((resolve, reject) => {
-    const args = dargs(options.pscIdeArgs)
+    const args = options.pscIdeArgs.split(" ")
     const ideClient = spawn('psc-ide-client', args)
 
     var stdout = ''

@@ -21,10 +21,10 @@ function compile(psModule) {
 
   cache.compilationStarted = true
 
-  const args = dargs(Object.assign({
+  const args = dargs({
     _: options.src,
     output: options.output,
-  }, options.pscArgs))
+  }).concat(options.pscArgs.split(" "))
 
   debug('spawning compiler %s %o', options.psc, args)
 
@@ -63,11 +63,11 @@ function bundle(options, cache) {
   const stdout = []
   const stderr = cache.bundle = []
 
-  const args = dargs(Object.assign({
+  const args = dargs({
     _: [path.join(options.output, '*', '*.js')],
     output: options.bundleOutput,
     namespace: options.bundleNamespace,
-  }, options.pscBundleArgs))
+  }).concat(options.pscBundleArgs.split(" "))
 
   cache.bundleModules.forEach(name => args.push('--module', name))
 
