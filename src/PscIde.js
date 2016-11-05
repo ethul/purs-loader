@@ -38,7 +38,7 @@ function connect(psModule) {
     ideClient.stderr.on('data', data => {
       debug(data.toString())
       cache.ideServer = false
-      reject(true)
+      reject(new Error('psc-ide-client failed'))
     })
     ideClient.stdout.once('data', data => {
       debug(data.toString())
@@ -49,11 +49,11 @@ function connect(psModule) {
           resolve(psModule)
         } else {
           cache.ideServer = ideServer
-          reject(true)
+          reject(new Error('psc-ide-client failed'))
         }
       } else {
         cache.ideServer = false
-        reject(true)
+        reject(new Error('psc-ide-client failed'))
       }
     })
     ideClient.stdin.resume()
@@ -135,7 +135,7 @@ function rebuild(psModule) {
       if (res && !Array.isArray(res.result)) {
         return res.resultType === 'success'
                ? resolve(psModule)
-               : reject('psc-ide rebuild failed')
+               : reject(new Error('psc-ide rebuild failed'))
       }
 
       Promise.map(res.result, (item, i) => {
@@ -153,10 +153,10 @@ function rebuild(psModule) {
               }))
               .then(() => request({ command: 'load' }))
               .then(resolve)
-              .catch(() => reject('psc-ide rebuild failed'))
+              .catch(() => reject(new Error('psc-ide rebuild failed')))
           }
           cache.errors = compileMessages.join('\n')
-          reject('psc-ide rebuild failed')
+          reject(new Error('psc-ide rebuild failed'))
         } else {
           cache.warnings = compileMessages.join('\n')
           resolve(psModule)

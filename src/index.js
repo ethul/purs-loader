@@ -125,7 +125,7 @@ module.exports = function purescriptLoader(source, map) {
       }))
       .catch(error => {
         cache.deferred[0].reject(error)
-        cache.deferred.slice(1).forEach(psModule => psModule.reject(true))
+        cache.deferred.slice(1).forEach(psModule => psModule.reject(new Error('purs-loader failed')))
       })
   }
 }

@@ -41,7 +41,7 @@ function compile(psModule) {
       cache.compilationFinished = true
       if (code !== 0) {
         cache.errors = stderr.join('')
-        reject(true)
+        reject(new Error('compilation failed'))
       } else {
         cache.warnings = stderr.join('')
         resolve(psModule)
@@ -83,7 +83,7 @@ function bundle(options, cache) {
     compilation.on('close', code => {
       if (code !== 0) {
         cache.errors = (cache.errors || '') + stderr.join('')
-        return reject(true)
+        return reject(new Error('bundling failed'))
       }
       cache.bundle = stderr
       resolve(fs.appendFileAsync(options.bundleOutput, `module.exports = ${options.bundleNamespace}`))
