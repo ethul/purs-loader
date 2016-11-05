@@ -18,6 +18,8 @@ npm install purs-loader@next --save-dev
 npm install purs-loader@purescript-0.8 --save-dev
 
 npm install purs-loader@purescript-0.9 --save-dev
+
+npm install purs-loader@purescript-0.10 --save-dev
 ```
 
 ## Example
