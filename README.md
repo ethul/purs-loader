@@ -75,3 +75,4 @@ Default options:
 
 Experimental support for instant rebuilds using `psc-ide-server` can be enabled
 via the `pscIde: true` option.
+You can use already running `psc-ide-server` instance - just define its port in `pscIdeArgs`.
