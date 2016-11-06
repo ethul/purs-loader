@@ -33,6 +33,7 @@ module.exports = function purescriptLoader(source, map) {
     bundle: false,
     warnings: true,
     output: 'output',
+    mainModule: {},
     src: [
       path.join('src', '**', '*.purs'),
       path.join('bower_components', 'purescript-*', 'src', '**', '*.purs')
@@ -180,6 +181,12 @@ function toJavaScript(psModule) {
         .replace(/require\(['"]\.\/foreign['"]\)/g, (m, p1) => {
           return 'require("' + jsStringEscape(result.psModuleMap[psModule.name].ffi) + '")'
         })
+    }
+
+    const main = options.mainModule[psModule.name];
+
+    if (main) {
+      js = `${js}\nmodule.exports.${main}(module)();`;
     }
 
     return js

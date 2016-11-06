@@ -64,6 +64,7 @@ Default options:
   bundle: false,
   warnings: true,
   output: 'output',
+  mainModule: {}, // provides a mapping to resolve main functions exported by PureScript webpack entries
   src: [
     path.join('src', '**', '*.purs'),
     path.join('bower_components', 'purescript-*', 'src', '**', '*.purs')
