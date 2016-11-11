@@ -29,7 +29,7 @@ function compile(psModule) {
   debug('spawning compiler %s %o', options.psc, args)
 
   return (new Promise((resolve, reject) => {
-    console.log('\nCompiling PureScript...')
+    debug('\nCompiling PureScript...')
 
     const compilation = spawn(options.psc, args)
 
@@ -37,7 +37,7 @@ function compile(psModule) {
     compilation.stderr.on('data', data => stderr.push(data.toString()))
 
     compilation.on('close', code => {
-      console.log('Finished compiling PureScript.')
+      debug('Finished compiling PureScript.')
       cache.compilationFinished = true
       if (code !== 0) {
         cache.errors = stderr.join('')
@@ -74,7 +74,7 @@ function bundle(options, cache) {
   debug('spawning bundler %s %o', options.pscBundle, args.join(' '))
 
   return (new Promise((resolve, reject) => {
-    console.log('Bundling PureScript...')
+    debug('Bundling PureScript...')
 
     const compilation = spawn(options.pscBundle, args)
 
