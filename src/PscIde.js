@@ -77,10 +77,7 @@ function connect(psModule) {
       if (!cache.ideServer && number === 9) {
         debug(error)
 
-        console.log(
-          'failed to connect to or start psc-ide-server, ' +
-          'full compilation will occur on rebuild'
-        )
+        console.warn('Failed to connect to or start psc-ide-server. A full compilation will occur on rebuild');
 
         return Promise.resolve(psModule)
       }
@@ -133,9 +130,7 @@ function rebuild(psModule) {
       }
 
       if (res && !Array.isArray(res.result)) {
-        return res.resultType === 'success'
-               ? resolve(psModule)
-               : reject(new Error('psc-ide rebuild failed'))
+        return resolve(psModule);
       }
 
       Promise.map(res.result, (item, i) => {
@@ -144,7 +139,13 @@ function rebuild(psModule) {
       })
       .then(compileMessages => {
         if (res.resultType === 'error') {
-          if (res.result.some(item => item.errorCode === 'UnknownModule' || item.errorCode === 'UnknownName')) {
+          if (res.result.some(item => {
+            const isUnknownModule = item.errorCode === 'UnknownModule';
+
+            const isUnknownModuleImport = item.errorCode === 'UnknownName' && /Unknown module/.test(item.message);
+
+            return isUnknownModule || isUnknownModuleImport;
+          })) {
             debug('unknown module, attempting full recompile')
             return Psc.compile(psModule)
               .then(() => PsModuleMap.makeMap(options.src).then(map => {
@@ -153,13 +154,19 @@ function rebuild(psModule) {
               }))
               .then(() => request({ command: 'load' }))
               .then(resolve)
-              .catch(() => reject(new Error('psc-ide rebuild failed')))
+              .catch(() => resolve(psModule))
           }
-          cache.errors = compileMessages.join('\n')
-          reject(new Error('psc-ide rebuild failed'))
+          const errorMessage = compileMessages.join('\n');
+          if (errorMessage.length) {
+            psModule.emitError(errorMessage);
+          }
+          resolve(psModule);
         } else {
-          cache.warnings = compileMessages.join('\n')
-          resolve(psModule)
+          const warningMessage = compileMessages.join('\n');
+          if (options.warnings && warningMessage.length) {
+            psModule.emitWarning(warningMessage);
+          }
+          resolve(psModule);
         }
       })
     })
