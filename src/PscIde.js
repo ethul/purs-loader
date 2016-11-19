@@ -77,10 +77,7 @@ function connect(psModule) {
       if (!cache.ideServer && number === 9) {
         debug(error)
 
-        console.log(
-          'failed to connect to or start psc-ide-server, ' +
-          'full compilation will occur on rebuild'
-        )
+        console.warn('Failed to connect to or start psc-ide-server. A full compilation will occur on rebuild');
 
         return Promise.resolve(psModule)
       }
@@ -133,9 +130,7 @@ function rebuild(psModule) {
       }
 
       if (res && !Array.isArray(res.result)) {
-        return res.resultType === 'success'
-               ? resolve(psModule)
-               : reject(new Error('psc-ide rebuild failed'))
+        return resolve(psModule);
       }
 
       Promise.map(res.result, (item, i) => {
@@ -153,10 +148,10 @@ function rebuild(psModule) {
               }))
               .then(() => request({ command: 'load' }))
               .then(resolve)
-              .catch(() => reject(new Error('psc-ide rebuild failed')))
+              .catch(() => resolve(psModule))
           }
           cache.errors = compileMessages.join('\n')
-          reject(new Error('psc-ide rebuild failed'))
+          resolve(psModule);
         } else {
           cache.warnings = compileMessages.join('\n')
           resolve(psModule)
