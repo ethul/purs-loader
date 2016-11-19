@@ -139,7 +139,13 @@ function rebuild(psModule) {
       })
       .then(compileMessages => {
         if (res.resultType === 'error') {
-          if (res.result.some(item => item.errorCode === 'UnknownModule' || item.errorCode === 'UnknownName')) {
+          if (res.result.some(item => {
+            const isUnknownModule = item.errorCode === 'UnknownModule';
+
+            const isUnknownModuleImport = item.errorCode === 'UnknownName' && /Unknown module/.test(item.message);
+
+            return isUnknownModule || isUnknownModuleImport;
+          })) {
             debug('unknown module, attempting full recompile')
             return Psc.compile(psModule)
               .then(() => PsModuleMap.makeMap(options.src).then(map => {
