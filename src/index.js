@@ -62,21 +62,6 @@ module.exports = function purescriptLoader(source, map) {
         psModuleMap: cache.psModuleMap
       }
     })
-
-    // add psc warnings to webpack compilation warnings
-    this._compiler.plugin('after-compile', (compilation, callback) => {
-      if (options.warnings && cache.warnings) {
-        compilation.warnings.unshift(`PureScript compilation:\n${cache.warnings}`)
-        cache.warnings = null;
-      }
-
-      if (cache.errors) {
-        compilation.errors.unshift(`PureScript compilation:\n${cache.errors}`)
-        cache.errors = null;
-      }
-
-      callback()
-    })
   }
 
   const psModuleName = PsModuleMap.match(source)
@@ -89,6 +74,8 @@ module.exports = function purescriptLoader(source, map) {
     jsPath: path.resolve(path.join(options.output, psModuleName, 'index.js')),
     options: options,
     cache: cache,
+    emitWarning: warning => this.emitWarning(warning),
+    emitError: error => this.emitError(error)
   }
 
   debug('loader called', psModule.name)

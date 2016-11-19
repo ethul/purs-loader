@@ -156,11 +156,17 @@ function rebuild(psModule) {
               .then(resolve)
               .catch(() => resolve(psModule))
           }
-          cache.errors = compileMessages.join('\n')
+          const errorMessage = compileMessages.join('\n');
+          if (errorMessage.length) {
+            psModule.emitError(errorMessage);
+          }
           resolve(psModule);
         } else {
-          cache.warnings = compileMessages.join('\n')
-          resolve(psModule)
+          const warningMessage = compileMessages.join('\n');
+          if (options.warnings && warningMessage.length) {
+            psModule.emitWarning(warningMessage);
+          }
+          resolve(psModule);
         }
       })
     })

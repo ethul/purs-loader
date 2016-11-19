@@ -40,10 +40,16 @@ function compile(psModule) {
       debug('finished compiling PureScript.')
       cache.compilationFinished = true
       if (code !== 0) {
-        cache.errors = stderr.join('')
+        const errorMessage = stderr.join('');
+        if (errorMessage.length) {
+          psModule.emitError(errorMessage);
+        }
         reject(new Error('compilation failed'))
       } else {
-        cache.warnings = stderr.join('')
+        const warningMessage = stderr.join('');
+        if (options.warnings && warningMessage.length) {
+          psModule.emitWarning(warningMessage);
+        }
         resolve(psModule)
       }
     })
@@ -83,7 +89,10 @@ function bundle(options, cache) {
     compilation.on('close', code => {
       debug('finished bundling PureScript.')
       if (code !== 0) {
-        cache.errors = (cache.errors || '') + stderr.join('')
+        const errorMessage = stderr.join('');
+        if (errorMessage.length) {
+          psModule.emitError(errorMessage);
+        }
         return reject(new Error('bundling failed'))
       }
       cache.bundle = stderr
