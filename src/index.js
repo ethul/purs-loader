@@ -44,7 +44,9 @@ module.exports = function purescriptLoader(source, map) {
   let cache = config.purescriptLoaderCache = config.purescriptLoaderCache || {
     rebuild: false,
     deferred: [],
-    bundleModules: []
+    bundleModules: [],
+    warnings: [],
+    errors: []
   }
 
   if (!config.purescriptLoaderInstalled) {
@@ -59,9 +61,24 @@ module.exports = function purescriptLoader(source, map) {
         deferred: [],
         bundleModules: [],
         ideServer: cache.ideServer,
-        psModuleMap: cache.psModuleMap
+        psModuleMap: cache.psModuleMap,
+        warnings: [],
+        errors: []
       }
-    })
+    });
+
+    // add psc warnings to webpack compilation warnings
+    this._compiler.plugin('after-compile', (compilation, callback) => {
+      cache.warnings.forEach(warning => {
+        compilation.warnings.push(warning);
+      });
+
+      cache.errors.forEach(error => {
+        compilation.errors.push(error);
+      });
+
+      callback()
+    });
   }
 
   const psModuleName = PsModuleMap.match(source)
@@ -74,8 +91,16 @@ module.exports = function purescriptLoader(source, map) {
     jsPath: path.resolve(path.join(options.output, psModuleName, 'index.js')),
     options: options,
     cache: cache,
-    emitWarning: warning => this.emitWarning(warning),
-    emitError: error => this.emitError(error)
+    emitWarning: warning => {
+      if (options.warnings && warning.length) {
+        cache.warnings.push(warning);
+      }
+    },
+    emitError: error => {
+      if (error.length) {
+        cache.errors.push(error);
+      }
+    }
   }
 
   debug('loader called', psModule.name)

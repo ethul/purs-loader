@@ -33,8 +33,9 @@ function compile(psModule) {
 
     const compilation = spawn(options.psc, args)
 
-    compilation.stdout.on('data', data => stderr.push(data.toString()))
-    compilation.stderr.on('data', data => stderr.push(data.toString()))
+    compilation.stderr.on('data', data => {
+      stderr.push(data.toString());
+    });
 
     compilation.on('close', code => {
       debug('finished compiling PureScript.')
