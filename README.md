@@ -31,6 +31,7 @@ const webpackConfig = {
       exclude: /node_modules/,
       query: {
         psc: 'psa',
+        pscArgs: '--censor-lib --censor-codes=ImplicitImport',
         src: ['bower_components/purescript-*/src/**/*.purs', 'src/**/*.purs']
       }
     }
@@ -49,9 +50,9 @@ Default options:
 ```javascript
 {
   psc: 'psc',
-  pscArgs: {},
+  pscArgs: "",
   pscBundle: 'psc-bundle',
-  pscBundleArgs: {},
+  pscBundleArgs: "",
   pscIde: false, // instant rebuilds using psc-ide-server (experimental)
   pscIdeArgs: {}, // for example, to use different psc-ide-server port: {port: 4088}
   pscIdeColors: false, // defaults to true if psc === 'psa'
