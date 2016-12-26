@@ -19,6 +19,8 @@ module.exports = function purescriptLoader(source, map) {
   const query = loaderUtils.parseQuery(this.query)
   const webpackOptions = this.options.purescriptLoader || {}
 
+  const depsPath = path.join('bower_components', 'purescript-*', 'src', '**', '*.purs');
+
   const options = Object.assign({
     context: config.context,
     psc: 'psc',
@@ -35,7 +37,7 @@ module.exports = function purescriptLoader(source, map) {
     output: 'output',
     src: [
       path.join('src', '**', '*.purs'),
-      path.join('bower_components', 'purescript-*', 'src', '**', '*.purs')
+      depsPath
     ]
   }, webpackOptions, query)
 
