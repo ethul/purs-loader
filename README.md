@@ -54,6 +54,7 @@ Default options:
   pscBundleArgs: {},
   pscIde: false, // instant rebuilds using psc-ide-server (experimental)
   pscIdeArgs: {}, // for example, to use different psc-ide-server port: {port: 4088}
+  pscIdeServerArgs: {}, // for example, to change the port { port: 4088 }
   pscIdeColors: false, // defaults to true if psc === 'psa'
   bundleOutput: 'output/bundle.js',
   bundleNamespace: 'PS',

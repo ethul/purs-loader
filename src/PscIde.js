@@ -61,13 +61,14 @@ function connect(psModule) {
     ideClient.stdin.write('\n')
   })
 
-  const args = dargs(Object.assign({
+  const serverArgs = dargs(Object.assign({
     outputDirectory: options.output,
-  }, options.pscIdeArgs))
+    "_": options.src
+  }, options.pscIdeServerArgs))
 
-  debug('attempting to start psc-ide-server', args)
+  debug('attempting to start psc-ide-server', serverArgs)
 
-  const ideServer = cache.ideServer = spawn('psc-ide-server', [])
+  const ideServer = cache.ideServer = spawn('psc-ide-server', serverArgs)
   ideServer.stderr.on('data', data => {
     debug(data.toString())
   })
