@@ -47,7 +47,7 @@ Refer to the [purescript-webpack-example](https://github.com/ethul/purescript-we
 Default options:
 
 ```javascript
-{
+const loaderConfig = {
   psc: 'psc',
   pscArgs: {},
   pscBundle: 'psc-bundle',
@@ -56,6 +56,7 @@ Default options:
   pscIdeArgs: {}, // for example, to use different psc-ide-server port: {port: 4088}
   pscIdeServerArgs: {}, // for example, to change the port { port: 4088 }
   pscIdeColors: false, // defaults to true if psc === 'psa'
+  pscPackage: false,
   bundleOutput: 'output/bundle.js',
   bundleNamespace: 'PS',
   bundle: false,
@@ -84,6 +85,6 @@ it might result in a slower initial webpack startup time (rebuilds are not
 affected). To override the default behaviour, add:
 `pscIdeServerArgs: { "_": ['your/*globs/here'] }` to the loader config
 
+### `psc-package` support (experimental)
 
-
-
+Set `pscPackage` query parameter to `true` and remove `src` parameter to enable `psc-package` support.
