@@ -32,7 +32,7 @@ module.exports = function purescriptLoader(source, map) {
     }
   })
 
-  let options = Object.assign({
+  const defaultOptions = {
     context: config.context,
     psc: 'psc',
     pscArgs: {},
@@ -51,7 +51,9 @@ module.exports = function purescriptLoader(source, map) {
       path.join('src', '**', '*.purs'),
       ...depsPaths(query.pscPackage)
     ]
-  }, webpackOptions, query)
+  }
+
+  let options = Object.assign(webpackOptions, query)
 
   this.cacheable && this.cacheable()
 
@@ -62,6 +64,12 @@ module.exports = function purescriptLoader(source, map) {
     warnings: [],
     errors: []
   }
+
+  if (options.pscPackage && options.src) {
+    cache.warnings.push("purs-loader: src parameter is set - pscPackage parameter is ignored")
+  }
+
+  options = Object.assign(defaultOptions, options)
 
   if (!config.purescriptLoaderInstalled) {
     config.purescriptLoaderInstalled = true
