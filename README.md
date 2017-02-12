@@ -64,7 +64,11 @@ const loaderConfig = {
   output: 'output',
   src: [
     path.join('src', '**', '*.purs'),
+    // if pscPackage = false
     path.join('bower_components', 'purescript-*', 'src', '**', '*.purs')
+    /*
+     * OR source paths reported by `psc-package sources`, if pscPackage = true
+     */
   ]
 }
 ```
@@ -87,4 +91,5 @@ affected). To override the default behaviour, add:
 
 ### `psc-package` support (experimental)
 
-Set `pscPackage` query parameter to `true` and remove `src` parameter to enable `psc-package` support.
+Set `pscPackage` query parameter to `true` to enable `psc-package` support. The `psc-package`-supplied source paths 
+will be appended to `src` parameter.
