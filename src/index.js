@@ -50,6 +50,7 @@ module.exports = function purescriptLoader(source, map) {
     bundle: false,
     warnings: true,
     output: 'output',
+    mainModule: {},
     src: [
       path.join('src', '**', '*.purs'),
       ...defaultDeps
@@ -215,6 +216,12 @@ function toJavaScript(psModule) {
         .replace(/require\(['"]\.\/foreign['"]\)/g, (m, p1) => {
           return 'require("' + jsStringEscape(result.psModuleMap[psModule.name].ffi) + '")'
         })
+    }
+
+    const main = options.mainModule[psModule.name];
+
+    if (main) {
+      js = `${js}\nmodule.exports.${main}(module)();`;
     }
 
     return js

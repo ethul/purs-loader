@@ -62,6 +62,7 @@ const loaderConfig = {
   bundle: false,
   warnings: true,
   output: 'output',
+  mainModule: {}, // provides a mapping to resolve main functions exported by PureScript webpack entries
   src: [
     path.join('src', '**', '*.purs'),
     // if pscPackage = false
