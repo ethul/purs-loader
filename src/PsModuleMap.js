@@ -8,15 +8,23 @@ const fs = Promise.promisifyAll(require('fs'));
 
 const globby = require('globby');
 
-const debug = require('debug')('purs-loader')
+const debug = require('debug')('purs-loader');
 
-const srcModuleRegex = /(?:^|\n)module\s+([\w\.]+)/i
+const srcModuleRegex = /(?:^|\n)module\s+([\w\.]+)/i;
 
-function match(str) {
+const importModuleRegex = /(?:^|\n)\s*import\s+([\w\.]+)/ig;
+
+function matchModule(str) {
   const matches = str.match(srcModuleRegex);
   return matches && matches[1];
 }
-module.exports.match = match;
+module.exports.match = matchModule;
+
+function matchImports(str) {
+  const matches = str.match(importModuleRegex);
+  return (matches || []).map(a => a.replace(/\n?\s*import\s+/i, ''));
+}
+module.exports.matchImports = matchImports;
 
 function makeMapEntry(filePurs) {
   const dirname = path.dirname(filePurs);
@@ -33,13 +41,17 @@ function makeMapEntry(filePurs) {
 
     const sourceJs = fileMap.fileJs;
 
-    const moduleName = match(sourcePurs);
+    const moduleName = matchModule(sourcePurs);
+
+    const imports = matchImports(sourcePurs);
 
     const map = {};
 
     map[moduleName] = map[moduleName] || {};
 
     map[moduleName].src = path.resolve(filePurs);
+
+    map[moduleName].imports = imports;
 
     if (sourceJs) {
       map[moduleName].ffi = path.resolve(fileJs);
