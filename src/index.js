@@ -10,6 +10,8 @@ const PsModuleMap = require('./PsModuleMap');
 const Psc = require('./Psc');
 const PscIde = require('./PscIde');
 const dargs = require('./dargs');
+const spawn = require('cross-spawn').sync
+const eol = require('os').EOL
 
 const requireRegex = /require\(['"]\.\.\/([\w\.]+)['"]\)/g
 
@@ -19,15 +21,30 @@ module.exports = function purescriptLoader(source, map) {
   const query = loaderUtils.parseQuery(this.query)
   const webpackOptions = this.options.purescriptLoader || {}
 
-  const options = Object.assign({
+  const depsPaths = (pscPackage => {
+    if (pscPackage) {
+      debug('calling psc-package...')
+
+      return spawn('psc-package', ['sources']).stdout.toString().split(eol).filter(v => v != '')
+    }
+    else {
+      return [ path.join('bower_components', 'purescript-*', 'src', '**', '*.purs') ]
+    }
+  })
+
+  let options = Object.assign(webpackOptions, query)
+
+  const defaultDeps = depsPaths(options.pscPackage)
+  const defaultOptions = {
     context: config.context,
     psc: 'psc',
     pscArgs: {},
     pscBundle: 'psc-bundle',
     pscBundleArgs: {},
     pscIde: false,
-    pscIdeColors: webpackOptions.psc === 'psa' || query.psc === 'psa',
+    pscIdeColors: options.psc === 'psa',
     pscIdeArgs: {},
+    pscPackage: false,
     bundleOutput: 'output/bundle.js',
     bundleNamespace: 'PS',
     bundle: false,
@@ -35,9 +52,9 @@ module.exports = function purescriptLoader(source, map) {
     output: 'output',
     src: [
       path.join('src', '**', '*.purs'),
-      path.join('bower_components', 'purescript-*', 'src', '**', '*.purs')
+      ...defaultDeps
     ]
-  }, webpackOptions, query)
+  }
 
   this.cacheable && this.cacheable()
 
@@ -48,6 +65,12 @@ module.exports = function purescriptLoader(source, map) {
     warnings: [],
     errors: []
   }
+
+  if (options.pscPackage && options.src) {
+    options.src = options.src.concat(defaultDeps) // append psc-package-provided source paths with users'
+  }
+
+  options = Object.assign(defaultOptions, options)
 
   if (!config.purescriptLoaderInstalled) {
     config.purescriptLoaderInstalled = true
