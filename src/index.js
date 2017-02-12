@@ -32,6 +32,8 @@ module.exports = function purescriptLoader(source, map) {
     }
   })
 
+  let options = Object.assign(webpackOptions, query)
+
   const defaultOptions = {
     context: config.context,
     psc: 'psc',
@@ -49,11 +51,9 @@ module.exports = function purescriptLoader(source, map) {
     output: 'output',
     src: [
       path.join('src', '**', '*.purs'),
-      ...depsPaths(query.pscPackage)
+      ...depsPaths(options.pscPackage)
     ]
   }
-
-  let options = Object.assign(webpackOptions, query)
 
   this.cacheable && this.cacheable()
 
