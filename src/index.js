@@ -41,7 +41,7 @@ module.exports = function purescriptLoader(source, map) {
     pscBundle: 'psc-bundle',
     pscBundleArgs: {},
     pscIde: false,
-    pscIdeColors: webpackOptions.psc === 'psa' || query.psc === 'psa',
+    pscIdeColors: options.psc === 'psa',
     pscIdeArgs: {},
     pscPackage: false,
     bundleOutput: 'output/bundle.js',
