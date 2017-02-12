@@ -14,7 +14,7 @@ Install with [npm](https://npmjs.org/package/purs-loader).
 // For PureScript 0.9 and newer
 npm install purs-loader --save-dev
 
-// Fore PureScript 0.8
+// For PureScript 0.8
 npm install purs-loader@purescript-0.8 --save-dev
 ```
 
@@ -66,14 +66,13 @@ const loaderConfig = {
     path.join('src', '**', '*.purs'),
     // if pscPackage = false
     path.join('bower_components', 'purescript-*', 'src', '**', '*.purs')
-    /*
-     * OR source paths reported by `psc-package sources`, if pscPackage = true
-     */
+    // if pscPackage = true
+    // source paths reported by `psc-package sources`
   ]
 }
 ```
 
-### Instant rebuilds (experimental)
+### `psc-ide` support (experimental)
 
 Experimental support for instant rebuilds using `psc-ide-server` can be enabled
 via the `pscIde: true` option.
