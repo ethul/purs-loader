@@ -34,6 +34,7 @@ module.exports = function purescriptLoader(source, map) {
 
   let options = Object.assign(webpackOptions, query)
 
+  const defaultDeps = depsPaths(options.pscPackage)
   const defaultOptions = {
     context: config.context,
     psc: 'psc',
@@ -51,7 +52,7 @@ module.exports = function purescriptLoader(source, map) {
     output: 'output',
     src: [
       path.join('src', '**', '*.purs'),
-      ...depsPaths(options.pscPackage)
+      ...defaultDeps
     ]
   }
 
