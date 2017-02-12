@@ -67,7 +67,7 @@ module.exports = function purescriptLoader(source, map) {
   }
 
   if (options.pscPackage && options.src) {
-    cache.warnings.push("purs-loader: src parameter is set - pscPackage parameter is ignored")
+    options.src = options.src.concat(defaultDeps) // append psc-package-provided source paths with users'
   }
 
   options = Object.assign(defaultOptions, options)
