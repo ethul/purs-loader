@@ -46,6 +46,7 @@ module.exports = function purescriptLoader(source, map) {
     bundleNamespace: 'PS',
     bundle: false,
     warnings: true,
+    watch: false,
     output: 'output',
     src: [
       path.join('src', '**', '*.purs'),
