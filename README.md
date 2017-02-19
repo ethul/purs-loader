@@ -61,7 +61,7 @@ const loaderConfig = {
   bundleNamespace: 'PS',
   bundle: false,
   warnings: true,
-  watch: false, // indicates if webapck is in watch mode
+  watch: false, // indicates if webpack is in watch mode
   output: 'output',
   src: [
     path.join('src', '**', '*.purs'),
