@@ -80,8 +80,14 @@ via the `pscIde: true` option.
 You can use an already running `psc-ide-server` instance by specifying the port in `pscIdeArgs`,
 if there is no server running this loader will start one for you.
 
+### `psc-package` support (experimental)
 
-#### Slower webpack startup after using purs-loader ?
+Set `pscPackage` query parameter to `true` to enable `psc-package` support. The `psc-package`-supplied source paths
+will be appended to `src` parameter.
+
+### Troubleshooting
+
+#### Slower webpack startup after enabling psc-ide support?
 
 By default, the psc-ide-server will be passed the globs from query.src, this is
 helpful for other tools using psc-ide-server (for example IDE plugins), however
@@ -89,7 +95,24 @@ it might result in a slower initial webpack startup time (rebuilds are not
 affected). To override the default behaviour, add:
 `pscIdeServerArgs: { "_": ['your/*globs/here'] }` to the loader config
 
-### `psc-package` support (experimental)
+#### Errors not being displayed in watch mode?
 
-Set `pscPackage` query parameter to `true` to enable `psc-package` support. The `psc-package`-supplied source paths 
-will be appended to `src` parameter.
+When the `watch` option is set to `true`, psc errors are appended to
+webpack's compilation instance errors array and not passed back as an
+error to the loader's callback. This may result in the error not being
+reported by webpack. To display errors, the following plugin may be added
+to the webpack config.
+
+```javascript
+const webpackConfig = {
+  // ...
+  plugins: [
+    function(){
+      this.plugin('done', function(stats){
+        process.stderr.write(stats.toString('errors-only'));
+      });
+    }
+  ]
+  // ...
+}
+```
