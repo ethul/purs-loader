@@ -42,7 +42,7 @@ function updatePsModuleMap(psModule) {
 
  // Reference the bundle.
 function makeBundleJS(psModule) {
-  const bundleOutput = psMoudle.options.bundleOutput;
+  const bundleOutput = psModule.options.bundleOutput;
 
   const name = psModule.name;
 
