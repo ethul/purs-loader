@@ -121,15 +121,15 @@ const webpackConfig = {
 
 This is caused when the loader tries to spawn a binary that does not exists
 (`file or directory not found`). If you call webpack like `webpack` or
-`webpack --watch`, then you need to ensure that all required binaries that the
+`webpack --watch`, then ensure that all required binaries that the
 loader depends on are available in your `$PATH`. 
 
-If you use `npm run` and `npm start` on NixOS, then it will first attempt to find 
-binaries in `node_packages/.bin`. If you have the compiler installed through `npm` 
-and it finds it there, this will cause `ENOENT`on Nix, because 
-[the binary needs to be patched first, because npm will install the binary that is 
-linked with /lib64/ld-linux-x86-64.so.2 - a file that will not exist at that path in 
-NixOS](https://github.com/ethul/purescript-webpack-example/issues/5#issuecomment-282492131).
+If you run webpack through an npm script (e.g., npm run or npm start) on NixOS, 
+then it will first attempt to find binaries in `node_packages/.bin`. 
+If you have the compiler installed through `npm` and it finds it there, this will 
+cause `ENOENT`on Nix, because [the binary needs to be patched first, but npm will 
+install the binary that is linked with /lib64/ld-linux-x86-64.so.2 - a file that 
+will not exist at that path in NixOS](https://github.com/ethul/purescript-webpack-example/issues/5#issuecomment-282492131).
 The solution is to simply use the compiler from `haskellPackages.purescript` and
 make sure that it's available in `$PATH`. For more information about how to make 
 it work on Nix, see [Purescript Webpack Example](https://github.com/ethul/purescript-webpack-example#using-globally-installed-binaries)
