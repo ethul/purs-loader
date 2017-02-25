@@ -103,10 +103,19 @@ function makeJS(psModule, psModuleMap, js) {
   }
 
   const additionalImportsResult = additionalImports.map(import_ => {
-    const escapedPath = jsStringEscape(psModuleMap[import_].src);
+    const moduleValue = psModuleMap[import_];
 
-    return `var ${import_.replace(/\./g, '_')} = require("${escapedPath}")`;
-  }).join('\n');
+    if (!moduleValue) {
+      debug('module %s was not found in the map, skipping require', import_);
+
+      return null;
+    }
+    else {
+      const escapedPath = jsStringEscape(moduleValue.src);
+
+      return `var ${import_.replace(/\./g, '_')} = require("${escapedPath}")`;
+    }
+  }).filter(a => a !== null).join('\n');
 
   const result_ = result + (additionalImports.length ? '\n' + additionalImportsResult : '');
 
