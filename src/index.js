@@ -18,7 +18,7 @@ const requireRegex = /require\(['"]\.\.\/([\w\.]+)['"]\)/g
 module.exports = function purescriptLoader(source, map) {
   const callback = this.async()
   const config = this.options
-  const query = loaderUtils.parseQuery(this.query)
+  const query = loaderUtils.getOptions(this) || {}
   const webpackOptions = this.options.purescriptLoader || {}
 
   const depsPaths = (pscPackage => {
