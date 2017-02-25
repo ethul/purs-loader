@@ -1,6 +1,6 @@
 {
   "name": "purs-loader",
-  "version": "2.3.0",
+  "version": "2.4.0-beta.2",
   "description": "A webpack loader for PureScript.",
   "main": "lib/index.js",
   "files": [
@@ -43,6 +43,7 @@
     "globby": "^4.0.0",
     "js-string-escape": "^1.0.1",
     "loader-utils": "^0.2.14",
+    "lodash.difference": "^4.5.0",
     "promise-retry": "^1.1.0"
   },
   "devDependencies": {

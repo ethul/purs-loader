@@ -63,15 +63,28 @@ function connect(psModule) {
 
   const serverArgs = dargs(Object.assign({
     outputDirectory: options.output,
-    "_": options.src
+    '_': options.src
   }, options.pscIdeServerArgs))
 
   debug('attempting to start psc-ide-server', serverArgs)
 
   const ideServer = cache.ideServer = spawn('psc-ide-server', serverArgs)
+
+  ideServer.stdout.on('data', data => {
+    debug('psc-ide-server stdout: %s', data.toString());
+  });
+
   ideServer.stderr.on('data', data => {
-    debug(data.toString())
-  })
+    debug('psc-ide-server stderr: %s', data.toString());
+  });
+
+  ideServer.on('error', error => {
+    debug('psc-ide-server error: %o', error);
+  });
+
+  ideServer.on('close', (code, signal) => {
+    debug('psc-ide-server close: %s %s', code, signal);
+  });
 
   return retryPromise((retry, number) => {
     return connect_().catch(error => {
@@ -150,7 +163,7 @@ function rebuild(psModule) {
             debug('unknown module, attempting full recompile')
             return Psc.compile(psModule)
               .then(() => PsModuleMap.makeMap(options.src).then(map => {
-                debug('rebuilt module map');
+                debug('rebuilt module map after unknown module forced a recompile');
                 cache.psModuleMap = map;
               }))
               .then(() => request({ command: 'load' }))
@@ -171,6 +184,8 @@ function rebuild(psModule) {
         }
       })
     })
+
+    debug('psc-ide-client stdin: %o', body);
 
     ideClient.stdin.write(JSON.stringify(body))
     ideClient.stdin.write('\n')

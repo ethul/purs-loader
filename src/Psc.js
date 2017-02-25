@@ -45,7 +45,12 @@ function compile(psModule) {
         if (errorMessage.length) {
           psModule.emitError(errorMessage);
         }
-        reject(new Error('compilation failed'))
+        if (options.watch) {
+          resolve(psModule);
+        }
+        else {
+          reject(new Error('compilation failed'))
+        }
       } else {
         const warningMessage = stderr.join('');
         if (options.warnings && warningMessage.length) {
