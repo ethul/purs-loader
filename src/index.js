@@ -149,7 +149,7 @@ module.exports = function purescriptLoader(source, map) {
   if (!cache.compilationStarted) {
     return Psc.compile(psModule)
        .then(() => PsModuleMap.makeMap(options.src).then(map => {
-         debug('rebuilt module map');
+         debug('rebuilt module map after compile');
          cache.psModuleMap = map;
        }))
       .then(() => Promise.map(cache.deferred, psModule => {

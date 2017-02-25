@@ -74,11 +74,20 @@ function makeJS(psModule, psModuleMap, js) {
 
   const result = js
     .replace(requireRE, (m, p1) => {
-      const escapedPath = jsStringEscape(psModuleMap[p1].src);
+      const moduleValue = psModuleMap[p1];
 
-      replacedImports.push(p1);
+      if (!moduleValue) {
+        debug('module %s was not found in the map, replacing require with null', p1);
 
-      return `require("${escapedPath}")`;
+        return 'null';
+      }
+      else {
+        const escapedPath = jsStringEscape(moduleValue.src);
+
+        replacedImports.push(p1);
+
+        return `require("${escapedPath}")`;
+      }
     })
     .replace(foreignRE, () => {
       const escapedPath = jsStringEscape(psModuleMap[name].ffi);
@@ -87,13 +96,11 @@ function makeJS(psModule, psModuleMap, js) {
     })
   ;
 
-  debug('imports %o', imports);
-
-  debug('replaced imports %o', replacedImports);
-
   const additionalImports = difference(imports, replacedImports);
 
-  debug('additional imports for %s: %o', name, additionalImports);
+  if (additionalImports.length) {
+    debug('additional imports for %s: %o', name, additionalImports);
+  }
 
   const additionalImportsResult = additionalImports.map(import_ => {
     const escapedPath = jsStringEscape(psModuleMap[import_].src);
