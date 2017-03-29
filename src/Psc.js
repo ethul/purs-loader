@@ -33,8 +33,14 @@ function compile(psModule) {
 
     const compilation = spawn(options.psc, args)
 
+    compilation.stdout.on('data', data => {
+      stderr.push(data.toString());
+      console.log(data.toString());
+    });
+
     compilation.stderr.on('data', data => {
       stderr.push(data.toString());
+      console.log(data.toString());
     });
 
     compilation.on('close', code => {
@@ -90,8 +96,14 @@ function bundle(options, cache) {
 
     const compilation = spawn(options.pscBundle, args)
 
-    compilation.stdout.on('data', data => stdout.push(data.toString()))
-    compilation.stderr.on('data', data => stderr.push(data.toString()))
+    compilation.stdout.on('data', data => {
+      stdout.push(data.toString())
+      console.log(data.toString());
+    })
+    compilation.stderr.on('data', data => {
+      stderr.push(data.toString())
+      console.log(data.toString());
+    })
     compilation.on('close', code => {
       debug('finished bundling PureScript.')
       if (code !== 0) {
