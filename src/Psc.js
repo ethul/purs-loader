@@ -35,12 +35,12 @@ function compile(psModule) {
 
     compilation.stdout.on('data', data => {
       stderr.push(data.toString());
-      console.log(data.toString());
+      console.error(data.toString());
     });
 
     compilation.stderr.on('data', data => {
       stderr.push(data.toString());
-      console.log(data.toString());
+      console.error(data.toString());
     });
 
     compilation.on('close', code => {
@@ -98,11 +98,11 @@ function bundle(options, cache) {
 
     compilation.stdout.on('data', data => {
       stdout.push(data.toString())
-      console.log(data.toString());
+      console.error(data.toString());
     })
     compilation.stderr.on('data', data => {
       stderr.push(data.toString())
-      console.log(data.toString());
+      console.error(data.toString());
     })
     compilation.on('close', code => {
       debug('finished bundling PureScript.')
