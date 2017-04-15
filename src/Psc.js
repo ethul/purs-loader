@@ -26,12 +26,20 @@ function compile(psModule) {
     output: options.output,
   }, options.pscArgs))
 
-  debug('spawning compiler %s %o', options.psc, args)
-
   return (new Promise((resolve, reject) => {
     debug('compiling PureScript...')
 
-    const compilation = spawn(options.psc, args)
+    let compilation;
+
+    if (options.customNodePath) {
+      debug('spawning compiler %s %s %o', options.customNodePath, options.psc, args)
+
+      compilation = spawn(options.customNodePath, [options.psc, ...args])
+    }
+    else {
+      debug('spawning compiler %s %o', options.psc, args)
+      compilation = spawn(options.psc, args)
+    }
 
     compilation.stderr.on('data', data => {
       stderr.push(data.toString());
