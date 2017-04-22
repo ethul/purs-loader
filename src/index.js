@@ -1,15 +1,27 @@
 'use strict'
 
 const debug = require('debug')('purs-loader')
+
 const loaderUtils = require('loader-utils')
+
 const Promise = require('bluebird')
+
 const path = require('path')
-const PsModuleMap = require('./PsModuleMap');
-const Psc = require('./Psc');
-const PscIde = require('./PscIde');
+
+const PsModuleMap = require('./purs-module-map');
+
+const compile = require('./compile');
+
+const bundle = require('./bundle');
+
+const ide = require('./ide');
+
 const toJavaScript = require('./to-javascript');
+
 const dargs = require('./dargs');
+
 const spawn = require('cross-spawn').sync
+
 const eol = require('os').EOL
 
 module.exports = function purescriptLoader(source, map) {
@@ -34,9 +46,9 @@ module.exports = function purescriptLoader(source, map) {
   const defaultDeps = depsPaths(options.pscPackage)
   const defaultOptions = {
     context: config.context,
-    psc: 'psc',
+    psc: null,
     pscArgs: {},
-    pscBundle: 'psc-bundle',
+    pscBundle: null,
     pscBundleArgs: {},
     pscIde: false,
     pscIdeColors: options.psc === 'psa',
@@ -102,7 +114,7 @@ module.exports = function purescriptLoader(source, map) {
     });
   }
 
-  const psModuleName = PsModuleMap.match(source)
+  const psModuleName = PsModuleMap.matchModule(source)
   const psModule = {
     name: psModuleName,
     load: js => callback(null, js),
@@ -131,8 +143,8 @@ module.exports = function purescriptLoader(source, map) {
   }
 
   if (cache.rebuild) {
-    return PscIde.connect(psModule)
-      .then(PscIde.rebuild)
+    return ide.connect(psModule)
+      .then(ide.rebuild)
       .then(toJavaScript)
       .then(psModule.load)
       .catch(psModule.reject)
@@ -147,11 +159,21 @@ module.exports = function purescriptLoader(source, map) {
   cache.deferred.push(psModule)
 
   if (!cache.compilationStarted) {
-    return Psc.compile(psModule)
-       .then(() => PsModuleMap.makeMap(options.src).then(map => {
-         debug('rebuilt module map after compile');
-         cache.psModuleMap = map;
-       }))
+    cache.compilationStarted = true;
+
+    return compile(psModule)
+      .then(() => {
+        cache.compilationFinished = true;
+
+        const bundlePromise = options.bundle ? bundle(options, cache) : Promise.resolve();
+
+        return bundlePromise.then(() =>
+          PsModuleMap.makeMap(options.src).then(map => {
+            debug('rebuilt module map after compile');
+            cache.psModuleMap = map;
+          })
+        );
+      })
       .then(() => Promise.map(cache.deferred, psModule => {
         if (typeof cache.ideServer === 'object') cache.ideServer.kill()
         return toJavaScript(psModule).then(psModule.load)

@@ -20,7 +20,7 @@ const Psc = require('./Psc');
 
 const PsModuleMap = require('./PsModuleMap');
 
-function connect(psModule) {
+module.exports.connect = function connect(psModule) {
   const options = psModule.options
   const cache = psModule.cache
 
@@ -31,14 +31,14 @@ function connect(psModule) {
   const connect_ = () => new Promise((resolve, reject) => {
     const args = dargs(options.pscIdeArgs)
 
-    debug('attempting to connect to psc-ide-server', args)
+    debug('attempting to run purs ide client: %o', args)
 
-    const ideClient = spawn('psc-ide-client', args)
+    const ideClient = spawn('purs', ['ide', 'client'].concat(args))
 
     ideClient.stderr.on('data', data => {
       debug(data.toString())
       cache.ideServer = false
-      reject(new Error('psc-ide-client failed'))
+      reject(new Error('purs ide client failed'))
     })
     ideClient.stdout.once('data', data => {
       debug(data.toString())
@@ -49,11 +49,11 @@ function connect(psModule) {
           resolve(psModule)
         } else {
           cache.ideServer = ideServer
-          reject(new Error('psc-ide-client failed'))
+          reject(new Error('purs ide client failed'))
         }
       } else {
         cache.ideServer = false
-        reject(new Error('psc-ide-client failed'))
+        reject(new Error('purs ide client failed'))
       }
     })
     ideClient.stdin.resume()
@@ -66,24 +66,24 @@ function connect(psModule) {
     '_': options.src
   }, options.pscIdeServerArgs))
 
-  debug('attempting to start psc-ide-server', serverArgs)
+  debug('attempting to start purs ide server: %o', serverArgs)
 
-  const ideServer = cache.ideServer = spawn('psc-ide-server', serverArgs)
+  const ideServer = cache.ideServer = spawn('purs', ['ide', 'server'].concat(serverArgs))
 
   ideServer.stdout.on('data', data => {
-    debug('psc-ide-server stdout: %s', data.toString());
+    debug('purs ide server stdout: %s', data.toString());
   });
 
   ideServer.stderr.on('data', data => {
-    debug('psc-ide-server stderr: %s', data.toString());
+    debug('purs ide server stderr: %s', data.toString());
   });
 
   ideServer.on('error', error => {
-    debug('psc-ide-server error: %o', error);
+    debug('purs ide server error: %o', error);
   });
 
   ideServer.on('close', (code, signal) => {
-    debug('psc-ide-server close: %s %s', code, signal);
+    debug('purs ide server close: %s %s', code, signal);
   });
 
   return retryPromise((retry, number) => {
@@ -91,7 +91,7 @@ function connect(psModule) {
       if (!cache.ideServer && number === 9) {
         debug(error)
 
-        console.warn('Failed to connect to or start psc-ide-server. A full compilation will occur on rebuild');
+        console.warn('Failed to connect to or start purs ide server. A full compilation will occur on rebuild');
 
         return Promise.resolve(psModule)
       }
@@ -104,18 +104,17 @@ function connect(psModule) {
     minTimeout: 333,
     maxTimeout: 333,
   })
-}
-module.exports.connect = connect;
+};
 
-function rebuild(psModule) {
+module.exports.rebuild = function rebuild(psModule) {
   const options = psModule.options
   const cache = psModule.cache
 
-  debug('attempting rebuild with psc-ide-client %s', psModule.srcPath)
+  debug('attempting rebuild with purs ide client %s', psModule.srcPath)
 
   const request = (body) => new Promise((resolve, reject) => {
     const args = dargs(options.pscIdeArgs)
-    const ideClient = spawn('psc-ide-client', args)
+    const ideClient = spawn('purs', ['ide', 'client'].concat(args))
 
     var stdout = ''
     var stderr = ''
@@ -130,7 +129,7 @@ function rebuild(psModule) {
 
     ideClient.on('close', code => {
       if (code !== 0) {
-        const error = stderr === '' ? 'Failed to spawn psc-ide-client' : stderr
+        const error = stderr === '' ? 'Failed to spawn purs ide client' : stderr
         return reject(new Error(error))
       }
 
@@ -187,7 +186,7 @@ function rebuild(psModule) {
       })
     })
 
-    debug('psc-ide-client stdin: %o', body);
+    debug('purs ide client stdin: %o', body);
 
     ideClient.stdin.write(JSON.stringify(body))
     ideClient.stdin.write('\n')
@@ -199,8 +198,7 @@ function rebuild(psModule) {
       file: psModule.srcPath,
     }
   })
-}
-module.exports.rebuild = rebuild;
+};
 
 function formatIdeResult(result, options, index, length) {
   let numAndErr = `[${index+1}/${length} ${result.errorCode}]`
