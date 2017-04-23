@@ -51,9 +51,9 @@ Default options:
 
 ```javascript
 const loaderConfig = {
-  psc: 'psc',
+  psc: null, // purs compile
   pscArgs: {},
-  pscBundle: 'psc-bundle',
+  pscBundle: null, // purs bundle
   pscBundleArgs: {},
   pscIde: false, // instant rebuilds using psc-ide-server (experimental)
   pscIdeArgs: {}, // for example, to use different psc-ide-server port: {port: 4088}
