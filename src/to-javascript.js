@@ -16,7 +16,7 @@ const debug = debug_('purs-loader');
 
 const debugVerbose = debug_('purs-loader:verbose');
 
-const PsModuleMap = require('./PsModuleMap');
+const PsModuleMap = require('./purs-module-map');
 
 function updatePsModuleMap(psModule) {
   const options = psModule.options;

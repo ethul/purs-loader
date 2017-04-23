@@ -22,7 +22,7 @@ const dargs = require('./dargs');
 
 const compile = require('./compile');
 
-const PsModuleMap = require('./PsModuleMap');
+const PsModuleMap = require('./purs-module-map');
 
 function UnknownModuleError() {
   this.name = 'UnknownModuleError';

@@ -72,7 +72,10 @@ module.exports = function purescriptLoader(source, map) {
 
       const cmd = spawn(pscPackageCommand, pscPackageArgs);
 
-      if (cmd.status !== 0) {
+      if (cmd.error) {
+        throw new Error(cmd.error);
+      }
+      else if (cmd.status !== 0) {
         const error = cmd.stdout.toString();
 
         throw new Error(error);
@@ -140,7 +143,7 @@ module.exports = function purescriptLoader(source, map) {
         compilationStarted: false,
         compilationFinished: false,
         installed: cache.installed,
-        srcOption: cache.srcOption
+        srcOption: []
       };
     });
 
