@@ -44,7 +44,7 @@ function spawnIdeClient(body, options) {
 
   const stdout = [];
 
-  debug('ide client %s %o %o', ideClientCommand, ideClientArgs, body);
+  debug('ide client %s %o %O', ideClientCommand, ideClientArgs, body);
 
   return new Promise((resolve, reject) => {
     const ideClient = spawn(ideClientCommand, ideClientArgs);
@@ -211,7 +211,7 @@ module.exports.rebuild = function rebuild(psModule) {
     try {
       const parsed = JSON.parse(response);
 
-      debugVerbose('parsed JSON response: %o', parsed);
+      debugVerbose('parsed JSON response: %O', parsed);
 
       return Promise.resolve(parsed);
     }
@@ -224,7 +224,7 @@ module.exports.rebuild = function rebuild(psModule) {
     const result = Array.isArray(parsed.result) ? parsed.result : [];
 
     return Promise.map(result, (item, i) => {
-      debugVerbose('formatting result %o', item);
+      debugVerbose('formatting result %O', item);
 
       return formatIdeResult(item, options, i, result.length);
     }).then(formatted => ({
@@ -254,7 +254,7 @@ module.exports.rebuild = function rebuild(psModule) {
 
           return isModuleNotFound || isUnknownModule || isUnknownModuleImport;
       })) {
-        debug('failed to rebuild because the module is unknown')
+        debug('module %s was not rebuilt because the module is unknown', psModule.name);
 
         return Promise.reject(new UnknownModuleError());
       }

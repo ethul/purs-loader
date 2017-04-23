@@ -137,8 +137,8 @@ module.exports = function purescriptLoader(source, map) {
         psModuleMap: cache.psModuleMap,
         warnings: [],
         errors: [],
-        compilationStarted: cache.compilationStarted,
-        compilationFinished: cache.compilationFinished,
+        compilationStarted: false,
+        compilationFinished: false,
         installed: cache.installed,
         srcOption: cache.srcOption
       };
@@ -217,8 +217,20 @@ module.exports = function purescriptLoader(source, map) {
     };
 
     const rebuild = () =>
-      ide.rebuild(psModule).catch(error => {
+      ide.rebuild(psModule)
+      .then(() =>
+        toJavaScript(psModule)
+          .then(psModule.load)
+          .catch(psModule.reject)
+      )
+      .catch(error => {
         if (error instanceof ide.UnknownModuleError) {
+          // Store the modules that trigger a recompile due to an
+          // unknown module error. We need to wait until compilation is
+          // done before loading these files.
+
+          cache.deferred.push(psModule);
+
           if (!cache.compilationStarted) {
             cache.compilationStarted = true;
 
@@ -233,28 +245,37 @@ module.exports = function purescriptLoader(source, map) {
                   cache.psModuleMap = map;
                 })
               )
-              .then(() => ide.load(psModule))
-              .then(() => psModule)
+              .then(() =>
+                Promise.map(cache.deferred, psModule =>
+                  ide.load(psModule)
+                    .then(() => toJavaScript(psModule))
+                    .then(psModule.load)
+                )
+              )
+              .catch(error => {
+                cache.deferred[0].reject(error);
+
+                cache.deferred.slice(1).forEach(psModule => {
+                  psModule.reject(new Error('purs-loader failed'));
+                })
+              })
             ;
           }
           else {
-            return Promise.resolve(psModule);
+            // The compilation has started. We must wait until it is
+            // done in order to ensure the module map contains all of
+            // the unknown modules.
           }
         }
         else {
           debug('ide rebuild failed due to an unhandled error: %o', error);
 
-          return Promise.reject(error);
+          psModule.reject(error);
         }
       })
     ;
 
-    connect()
-      .then(rebuild)
-      .then(toJavaScript)
-      .then(psModule.load)
-      .catch(psModule.reject)
-    ;
+    connect().then(rebuild);
   }
   else if (cache.compilationFinished) {
     debugVerbose('compilation is already finished, loading module %s', psModule.name);
@@ -292,7 +313,8 @@ module.exports = function purescriptLoader(source, map) {
         )
         .then(() =>
           Promise.map(cache.deferred, psModule =>
-            toJavaScript(psModule).then(psModule.load)
+            toJavaScript(psModule)
+              .then(psModule.load)
           )
         )
         .catch(error => {
