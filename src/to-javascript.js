@@ -10,7 +10,11 @@ const jsStringEscape = require('js-string-escape');
 
 const difference = require('lodash.difference');
 
-const debug = require('debug')('purs-loader');
+const debug_ = require('debug');
+
+const debug = debug_('purs-loader');
+
+const debugVerbose = debug_('purs-loader:verbose');
 
 const PsModuleMap = require('./PsModuleMap');
 
@@ -99,7 +103,7 @@ function makeJS(psModule, psModuleMap, js) {
   const additionalImports = difference(imports, replacedImports);
 
   if (additionalImports.length) {
-    debug('additional imports for %s: %o', name, additionalImports);
+    debugVerbose('additional imports for %s: %o', name, additionalImports);
   }
 
   const additionalImportsResult = additionalImports.map(import_ => {
@@ -129,13 +133,13 @@ module.exports = function toJavaScript(psModule) {
 
   const bundlePath = path.resolve(options.bundleOutput);
 
-  const jsPath = cache.bundle ? bundlePath : psModule.jsPath;
+  const jsPath = options.bundle ? bundlePath : psModule.jsPath;
 
   const js = fs.readFileAsync(jsPath, 'utf8').catch(() => '');
 
   const psModuleMap = updatePsModuleMap(psModule);
 
-  debug('loading JavaScript for %s', psModule.name);
+  debugVerbose('loading JavaScript for %s', psModule.name);
 
   return Promise.props({js: js, psModuleMap: psModuleMap}).then(result =>
     options.bundle ?

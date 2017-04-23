@@ -1,6 +1,10 @@
 'use strict'
 
-const debug = require('debug')('purs-loader')
+const debug_ = require('debug');
+
+const debug = debug_('purs-loader');
+
+const debugVerbose = debug_('purs-loader:verbose');
 
 const loaderUtils = require('loader-utils')
 
@@ -25,33 +29,44 @@ const spawn = require('cross-spawn').sync
 const eol = require('os').EOL
 
 module.exports = function purescriptLoader(source, map) {
-  const callback = this.async()
-  const config = this.options
-  const query = loaderUtils.getOptions(this) || {}
-  const webpackOptions = this.options.purescriptLoader || {}
+  this.cacheable && this.cacheable();
 
-  const depsPaths = (pscPackage => {
+  const callback = this.async();
+
+  const webpackConfig = this.options;
+
+  const loaderOptions = loaderUtils.getOptions(this) || {};
+
+  const srcOption = (pscPackage => {
     if (pscPackage) {
-      debug('calling psc-package...')
+      const pscPackageCommand = 'psc-package';
 
-      return spawn('psc-package', ['sources']).stdout.toString().split(eol).filter(v => v != '')
+      const pscPackageArgs = ['sources'];
+
+      debug('psc-package %s %o', pscPackageCommand, pscPackageArgs);
+
+      return spawn(pscPackageCommand, pscPackageArgs).stdout.toString().split(eol).filter(v => v != '').concat(
+        loaderOptions.src || [
+          path.join('src', '**', '*.purs'),
+        ]
+      )
     }
     else {
-      return [ path.join('bower_components', 'purescript-*', 'src', '**', '*.purs') ]
+      return loaderOptions.src || [
+        path.join('bower_components', 'purescript-*', 'src', '**', '*.purs'),
+        path.join('src', '**', '*.purs'),
+      ];
     }
-  })
+  })(loaderOptions.pscPackage);
 
-  let options = Object.assign(webpackOptions, query)
-
-  const defaultDeps = depsPaths(options.pscPackage)
-  const defaultOptions = {
-    context: config.context,
+  const options = Object.assign({
+    context: webpackConfig.context,
     psc: null,
     pscArgs: {},
     pscBundle: null,
     pscBundleArgs: {},
     pscIde: false,
-    pscIdeColors: options.psc === 'psa',
+    pscIdeColors: loaderOptions.psc === 'psa',
     pscIdeArgs: {},
     pscPackage: false,
     bundleOutput: 'output/bundle.js',
@@ -60,36 +75,29 @@ module.exports = function purescriptLoader(source, map) {
     warnings: true,
     watch: false,
     output: 'output',
-    src: [
-      path.join('src', '**', '*.purs'),
-      ...defaultDeps
-    ]
-  }
+    src: []
+  }, loaderOptions, {
+    src: srcOption
+  });
 
-  this.cacheable && this.cacheable()
-
-  let cache = config.purescriptLoaderCache = config.purescriptLoaderCache || {
+  var cache = webpackConfig.purescriptLoaderCache = webpackConfig.purescriptLoaderCache || {
     rebuild: false,
     deferred: [],
     bundleModules: [],
     warnings: [],
     errors: []
-  }
+  };
 
-  if (options.pscPackage && options.src) {
-    options.src = options.src.concat(defaultDeps) // append psc-package-provided source paths with users'
-  }
+  if (!webpackConfig.purescriptLoaderInstalled) {
+    debugVerbose('installing purs-loader with options: %O', options);
 
-  options = Object.assign(defaultOptions, options)
-
-  if (!config.purescriptLoaderInstalled) {
-    config.purescriptLoaderInstalled = true
+    webpackConfig.purescriptLoaderInstalled = true
 
     // invalidate loader cache when bundle is marked as invalid (in watch mode)
     this._compiler.plugin('invalid', () => {
-      debug('invalidating loader cache');
+      debugVerbose('invalidating loader cache');
 
-      cache = config.purescriptLoaderCache = {
+      cache = webpackConfig.purescriptLoaderCache = {
         rebuild: options.pscIde,
         deferred: [],
         bundleModules: [],
@@ -97,7 +105,7 @@ module.exports = function purescriptLoader(source, map) {
         psModuleMap: cache.psModuleMap,
         warnings: [],
         errors: []
-      }
+      };
     });
 
     // add psc warnings to webpack compilation warnings
@@ -114,7 +122,8 @@ module.exports = function purescriptLoader(source, map) {
     });
   }
 
-  const psModuleName = PsModuleMap.matchModule(source)
+  const psModuleName = PsModuleMap.matchModule(source);
+
   const psModule = {
     name: psModuleName,
     load: js => callback(null, js),
@@ -136,51 +145,132 @@ module.exports = function purescriptLoader(source, map) {
     }
   }
 
-  debug('loader called', psModule.name)
+  debug('loading %s', psModule.name);
 
   if (options.bundle) {
-    cache.bundleModules.push(psModule.name)
+    cache.bundleModules.push(psModule.name);
   }
 
   if (cache.rebuild) {
-    return ide.connect(psModule)
-      .then(ide.rebuild)
+    const connect = () => {
+      if (!cache.ideServer) {
+        cache.ideServer = true;
+
+        return ide.connect(psModule)
+          .then(ideServer => {
+            cache.ideServer = ideServer;
+            return psModule;
+          })
+          .then(ide.loadWithRetry)
+          .catch(error => {
+            if (cache.ideServer.kill) {
+              debug('ide failed to initially load modules, stopping the ide server process');
+
+              cache.ideServer.kill();
+            }
+
+            cache.ideServer = null;
+
+            return Promise.reject(error);
+          })
+        ;
+      }
+      else {
+        return Promise.resolve(psModule);
+      }
+    };
+
+    const rebuild = () =>
+      ide.rebuild(psModule).catch(error => {
+        if (error instanceof ide.UnknownModuleError) {
+          if (!cache.compilationStarted) {
+            cache.compilationStarted = true;
+
+            return compile(psModule)
+              .then(() => {
+                cache.compilationFinished = true;
+              })
+              .then(() =>
+                PsModuleMap.makeMap(options.src).then(map => {
+                  debug('rebuilt module map after unknown module forced a recompilation');
+
+                  cache.psModuleMap = map;
+                })
+              )
+              .then(() => ide.load(psModule))
+              .then(() => psModule)
+            ;
+          }
+          else {
+            return Promise.resolve(psModule);
+          }
+        }
+        else {
+          debug('ide rebuild failed due to an unhandled error: %o', error);
+
+          return Promise.reject(error);
+        }
+      })
+    ;
+
+    connect()
+      .then(rebuild)
       .then(toJavaScript)
       .then(psModule.load)
       .catch(psModule.reject)
+    ;
   }
+  else if (cache.compilationFinished) {
+    debugVerbose('compilation is already finished, loading module %s', psModule.name);
 
-  if (cache.compilationFinished) {
-    return toJavaScript(psModule).then(psModule.load).catch(psModule.reject)
+    toJavaScript(psModule)
+      .then(psModule.load)
+      .catch(psModule.reject);
   }
+  else {
+    // The compilation has not finished yet. We need to wait for
+    // compilation to finish before the loaders run so that references
+    // to compiled output are valid. Push the modules into the cache to
+    // be loaded once the complation is complete.
 
-  // We need to wait for compilation to finish before the loaders run so that
-  // references to compiled output are valid.
-  cache.deferred.push(psModule)
+    cache.deferred.push(psModule);
 
-  if (!cache.compilationStarted) {
-    cache.compilationStarted = true;
+    if (!cache.compilationStarted) {
+      cache.compilationStarted = true;
 
-    return compile(psModule)
-      .then(() => {
-        cache.compilationFinished = true;
-
-        const bundlePromise = options.bundle ? bundle(options, cache) : Promise.resolve();
-
-        return bundlePromise.then(() =>
+      compile(psModule)
+        .then(() => {
+          cache.compilationFinished = true;
+        })
+        .then(() => {
+          if (options.bundle) {
+            return bundle(options, cache.bundleModules);
+          }
+        })
+        .then(() =>
           PsModuleMap.makeMap(options.src).then(map => {
-            debug('rebuilt module map after compile');
+            debug('rebuilt module map after compilation');
+
             cache.psModuleMap = map;
           })
-        );
-      })
-      .then(() => Promise.map(cache.deferred, psModule => {
-        if (typeof cache.ideServer === 'object') cache.ideServer.kill()
-        return toJavaScript(psModule).then(psModule.load)
-      }))
-      .catch(error => {
-        cache.deferred[0].reject(error)
-        cache.deferred.slice(1).forEach(psModule => psModule.reject(new Error('purs-loader failed')))
-      })
+        )
+        .then(() =>
+          Promise.map(cache.deferred, psModule =>
+            toJavaScript(psModule).then(psModule.load)
+          )
+        )
+        .catch(error => {
+          cache.deferred[0].reject(error);
+
+          cache.deferred.slice(1).forEach(psModule => {
+            psModule.reject(new Error('purs-loader failed'));
+          })
+        })
+      ;
+    }
+    else {
+      // The complation has started. Nothing to do but wait until it is
+      // done before loading all of the modules.
+    }
   }
 }

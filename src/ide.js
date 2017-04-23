@@ -12,193 +12,71 @@ const spawn = require('cross-spawn');
 
 const colors = require('chalk');
 
-const debug = require('debug')('purs-loader');
+const debug_ = require('debug');
+
+const debug = debug_('purs-loader');
+
+const debugVerbose = debug_('purs-loader:verbose');
 
 const dargs = require('./dargs');
 
-const Psc = require('./Psc');
+const compile = require('./compile');
 
 const PsModuleMap = require('./PsModuleMap');
 
-module.exports.connect = function connect(psModule) {
-  const options = psModule.options
-  const cache = psModule.cache
+function UnknownModuleError() {
+  this.name = 'UnknownModuleError';
+  this.stack = (new Error()).stack;
+}
 
-  if (cache.ideServer) return Promise.resolve(psModule)
+UnknownModuleError.prototype = Object.create(Error.prototype);
 
-  cache.ideServer = true
+UnknownModuleError.prototype.constructor = UnknownModuleError;
 
-  const connect_ = () => new Promise((resolve, reject) => {
-    const args = dargs(options.pscIdeArgs)
+module.exports.UnknownModuleError = UnknownModuleError;
 
-    debug('attempting to run purs ide client: %o', args)
+function spawnIdeClient(body, options) {
+  const ideClientCommand = 'purs';
 
-    const ideClient = spawn('purs', ['ide', 'client'].concat(args))
+  const ideClientArgs = ['ide', 'client'].concat(dargs(options.pscIdeArgs));
+
+  const stderr = [];
+
+  const stdout = [];
+
+  debug('ide client %s %o %o', ideClientCommand, ideClientArgs, body);
+
+  return new Promise((resolve, reject) => {
+    const ideClient = spawn(ideClientCommand, ideClientArgs);
 
     ideClient.stderr.on('data', data => {
-      debug(data.toString())
-      cache.ideServer = false
-      reject(new Error('purs ide client failed'))
+      stderr.push(data.toString());
     })
-    ideClient.stdout.once('data', data => {
-      debug(data.toString())
-      if (data.toString()[0] === '{') {
-        const res = JSON.parse(data.toString())
-        if (res.resultType === 'success') {
-          cache.ideServer = ideServer
-          resolve(psModule)
-        } else {
-          cache.ideServer = ideServer
-          reject(new Error('purs ide client failed'))
-        }
-      } else {
-        cache.ideServer = false
-        reject(new Error('purs ide client failed'))
-      }
-    })
-    ideClient.stdin.resume()
-    ideClient.stdin.write(JSON.stringify({ command: 'load' }))
-    ideClient.stdin.write('\n')
-  })
-
-  const serverArgs = dargs(Object.assign({
-    outputDirectory: options.output,
-    '_': options.src
-  }, options.pscIdeServerArgs))
-
-  debug('attempting to start purs ide server: %o', serverArgs)
-
-  const ideServer = cache.ideServer = spawn('purs', ['ide', 'server'].concat(serverArgs))
-
-  ideServer.stdout.on('data', data => {
-    debug('purs ide server stdout: %s', data.toString());
-  });
-
-  ideServer.stderr.on('data', data => {
-    debug('purs ide server stderr: %s', data.toString());
-  });
-
-  ideServer.on('error', error => {
-    debug('purs ide server error: %o', error);
-  });
-
-  ideServer.on('close', (code, signal) => {
-    debug('purs ide server close: %s %s', code, signal);
-  });
-
-  return retryPromise((retry, number) => {
-    return connect_().catch(error => {
-      if (!cache.ideServer && number === 9) {
-        debug(error)
-
-        console.warn('Failed to connect to or start purs ide server. A full compilation will occur on rebuild');
-
-        return Promise.resolve(psModule)
-      }
-
-      return retry(error)
-    })
-  }, {
-    retries: 9,
-    factor: 1,
-    minTimeout: 333,
-    maxTimeout: 333,
-  })
-};
-
-module.exports.rebuild = function rebuild(psModule) {
-  const options = psModule.options
-  const cache = psModule.cache
-
-  debug('attempting rebuild with purs ide client %s', psModule.srcPath)
-
-  const request = (body) => new Promise((resolve, reject) => {
-    const args = dargs(options.pscIdeArgs)
-    const ideClient = spawn('purs', ['ide', 'client'].concat(args))
-
-    var stdout = ''
-    var stderr = ''
 
     ideClient.stdout.on('data', data => {
-      stdout = stdout + data.toString()
-    })
-
-    ideClient.stderr.on('data', data => {
-      stderr = stderr + data.toString()
+      stdout.push(data.toString());
     })
 
     ideClient.on('close', code => {
       if (code !== 0) {
-        const error = stderr === '' ? 'Failed to spawn purs ide client' : stderr
-        return reject(new Error(error))
+        const errorMessage = stderr.join('');
+
+        reject(new Error(`ide client failed: ${errorMessage}`));
       }
+      else {
+        const result = stdout.join('');
 
-      let res = null
-
-      try {
-        res = JSON.parse(stdout.toString())
-        debug(res)
-      } catch (err) {
-        return reject(err)
+        resolve(result);
       }
-
-      if (res && !Array.isArray(res.result)) {
-        return resolve(psModule);
-      }
-
-      Promise.map(res.result, (item, i) => {
-        debug(item)
-        return formatIdeResult(item, options, i, res.result.length)
-      })
-      .then(compileMessages => {
-        if (res.resultType === 'error') {
-          if (res.result.some(item => {
-            const isModuleNotFound = item.errorCode === 'ModuleNotFound';
-
-            const isUnknownModule = item.errorCode === 'UnknownModule';
-
-            const isUnknownModuleImport = item.errorCode === 'UnknownName' && /Unknown module/.test(item.message);
-
-            return isModuleNotFound || isUnknownModule || isUnknownModuleImport;
-          })) {
-            debug('unknown module, attempting full recompile')
-            return Psc.compile(psModule)
-              .then(() => PsModuleMap.makeMap(options.src).then(map => {
-                debug('rebuilt module map after unknown module forced a recompile');
-                cache.psModuleMap = map;
-              }))
-              .then(() => request({ command: 'load' }))
-              .then(resolve)
-              .catch(() => resolve(psModule))
-          }
-          const errorMessage = compileMessages.join('\n');
-          if (errorMessage.length) {
-            psModule.emitError(errorMessage);
-          }
-          resolve(psModule);
-        } else {
-          const warningMessage = compileMessages.join('\n');
-          if (options.warnings && warningMessage.length) {
-            psModule.emitWarning(warningMessage);
-          }
-          resolve(psModule);
-        }
-      })
     })
 
-    debug('purs ide client stdin: %o', body);
+    ideClient.stdin.resume();
 
-    ideClient.stdin.write(JSON.stringify(body))
-    ideClient.stdin.write('\n')
-  })
+    ideClient.stdin.write(JSON.stringify(body));
 
-  return request({
-    command: 'rebuild',
-    params: {
-      file: psModule.srcPath,
-    }
-  })
-};
+    ideClient.stdin.write('\n');
+  });
+}
 
 function formatIdeResult(result, options, index, length) {
   let numAndErr = `[${index+1}/${length} ${result.errorCode}]`
@@ -253,8 +131,140 @@ function formatIdeResult(result, options, index, length) {
       }
 
       return Promise.resolve(`\n${numAndErr} ${fileAndPos}\n\n${snippet}\n\n${result.message}`)
-    })
+    }).catch(error => {
+      debug('failed to format ide result: %o', error);
+
+      return Promise.resolve('');
+    });
   }
 
   return result.filename && result.position ? makeResultSnippet(result.filename, result.position) : makeResult();
 }
+
+module.exports.connect = function connect(psModule) {
+  const options = psModule.options
+
+  const serverCommand = 'purs';
+
+  const serverArgs = ['ide', 'server'].concat(dargs(Object.assign({
+    outputDirectory: options.output,
+    '_': options.src
+  }, options.pscIdeServerArgs)));
+
+  debug('ide server: %s %o', serverCommand, serverArgs);
+
+  const ideServer = spawn(serverCommand, serverArgs);
+
+  ideServer.stdout.on('data', data => {
+    debugVerbose('ide server stdout: %s', data.toString());
+  });
+
+  ideServer.stderr.on('data', data => {
+    debugVerbose('ide server stderr: %s', data.toString());
+  });
+
+  ideServer.on('error', error => {
+    debugVerbose('ide server error: %o', error);
+  });
+
+  ideServer.on('close', (code, signal) => {
+    debugVerbose('ide server close: %s %s', code, signal);
+  });
+
+  return Promise.resolve(ideServer);
+};
+
+module.exports.load = function load(psModule) {
+  const options = psModule.options
+
+  const body = {command: 'load'};
+
+  return spawnIdeClient(body, options);
+};
+
+module.exports.loadWithRetry = function loadWithRetry(psModule) {
+  const retries = 9;
+
+  return retryPromise((retry, number) => {
+    debugVerbose('attempting to load modules (%d out of %d attempts)', number, retries);
+
+    return module.exports.load(psModule).catch(retry);
+  }, {
+    retries: retries,
+    factor: 1,
+    minTimeout: 333,
+    maxTimeout: 333,
+  }).then(() => psModule);
+};
+
+module.exports.rebuild = function rebuild(psModule) {
+  const options = psModule.options;
+
+  const body = {
+    command: 'rebuild',
+    params: {
+      file: psModule.srcPath,
+    }
+  };
+
+  const parseResponse = response => {
+    try {
+      const parsed = JSON.parse(response);
+
+      debugVerbose('parsed JSON response: %o', parsed);
+
+      return Promise.resolve(parsed);
+    }
+    catch (error) {
+      return Promise.reject(error);
+    }
+  };
+
+  const formatResponse = parsed => {
+    const result = Array.isArray(parsed.result) ? parsed.result : [];
+
+    return Promise.map(result, (item, i) => {
+      debugVerbose('formatting result %o', item);
+
+      return formatIdeResult(item, options, i, result.length);
+    }).then(formatted => ({
+      parsed: parsed,
+      formatted: formatted,
+      formattedMessage: formatted.join('\n')
+    }));
+  };
+
+  return spawnIdeClient(body, options)
+    .then(parseResponse)
+    .then(formatResponse)
+    .then(({ parsed, formatted, formattedMessage }) => {
+      if (parsed.resultType === 'success') {
+        if (options.warnings && formattedMessage.length) {
+          psModule.emitWarning(formattedMessage);
+        }
+
+        return psModule;
+      }
+      else if ((parsed.result || []).some(item => {
+          const isModuleNotFound = item.errorCode === 'ModuleNotFound';
+
+          const isUnknownModule = item.errorCode === 'UnknownModule';
+
+          const isUnknownModuleImport = item.errorCode === 'UnknownName' && /Unknown module/.test(item.message);
+
+          return isModuleNotFound || isUnknownModule || isUnknownModuleImport;
+      })) {
+        debug('failed to rebuild because the module is unknown')
+
+        return Promise.reject(new UnknownModuleError());
+      }
+      else {
+        if (formattedMessage.length) {
+          psModule.emitError(formattedMessage);
+        }
+
+        return psModule;
+      }
+    })
+  ;
+};
