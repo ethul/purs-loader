@@ -27,7 +27,7 @@ module.exports = function bundle(options, bundleModules) {
 
   bundleModules.forEach(name => bundleArgs.push('--module', name))
 
-  debug('bundle: %s %o', bundleCommand, bundleArgs);
+  debug('bundle: %s %O', bundleCommand, bundleArgs);
 
   return (new Promise((resolve, reject) => {
     debug('bundling PureScript...')

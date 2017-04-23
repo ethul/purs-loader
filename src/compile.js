@@ -24,7 +24,7 @@ module.exports = function compile(psModule) {
 
   const stderr = [];
 
-  debug('compile %s %o', compileCommand, compileArgs)
+  debug('compile %s %O', compileCommand, compileArgs)
 
   return new Promise((resolve, reject) => {
     debug('compiling PureScript...')
