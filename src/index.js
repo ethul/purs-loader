@@ -31,31 +31,71 @@ const eol = require('os').EOL
 module.exports = function purescriptLoader(source, map) {
   this.cacheable && this.cacheable();
 
-  const callback = this.async();
-
   const webpackConfig = this.options;
+
+  var cache = webpackConfig.purescriptLoaderCache = webpackConfig.purescriptLoaderCache || {
+    rebuild: false,
+    deferred: [],
+    bundleModules: [],
+    ideServer: null,
+    psModuleMap: null,
+    warnings: [],
+    errors: [],
+    compilationStarted: false,
+    compilationFinished: false,
+    installed: false,
+    srcOption: []
+  };
+
+  const callback = this.async();
 
   const loaderOptions = loaderUtils.getOptions(this) || {};
 
   const srcOption = (pscPackage => {
-    if (pscPackage) {
+    const srcPath = path.join('src', '**', '*.purs');
+
+    const bowerPath = path.join('bower_components', 'purescript-*', 'src', '**', '*.purs');
+
+    if (cache.srcOption.length > 0) {
+      return cache.srcOption;
+    }
+    else if (pscPackage) {
       const pscPackageCommand = 'psc-package';
 
       const pscPackageArgs = ['sources'];
 
+      const loaderSrc = loaderOptions.src || [
+        srcPath
+      ];
+
       debug('psc-package %s %o', pscPackageCommand, pscPackageArgs);
 
-      return spawn(pscPackageCommand, pscPackageArgs).stdout.toString().split(eol).filter(v => v != '').concat(
-        loaderOptions.src || [
-          path.join('src', '**', '*.purs'),
-        ]
-      )
+      const cmd = spawn(pscPackageCommand, pscPackageArgs);
+
+      if (cmd.status !== 0) {
+        const error = cmd.stdout.toString();
+
+        throw new Error(error);
+      }
+      else {
+        const result = cmd.stdout.toString().split(eol).filter(v => v != '').concat(loaderSrc);
+
+        debug('psc-package result: %o', result);
+
+        cache.srcOption = result;
+
+        return result;
+      }
     }
     else {
-      return loaderOptions.src || [
-        path.join('bower_components', 'purescript-*', 'src', '**', '*.purs'),
-        path.join('src', '**', '*.purs'),
+      const result = loaderOptions.src || [
+        bowerPath,
+        srcPath
       ];
+
+      cache.srcOption = result;
+
+      return result;
     }
   })(loaderOptions.pscPackage);
 
@@ -80,18 +120,10 @@ module.exports = function purescriptLoader(source, map) {
     src: srcOption
   });
 
-  var cache = webpackConfig.purescriptLoaderCache = webpackConfig.purescriptLoaderCache || {
-    rebuild: false,
-    deferred: [],
-    bundleModules: [],
-    warnings: [],
-    errors: []
-  };
-
-  if (!webpackConfig.purescriptLoaderInstalled) {
+  if (!cache.installed) {
     debugVerbose('installing purs-loader with options: %O', options);
 
-    webpackConfig.purescriptLoaderInstalled = true
+    cache.installed = true;
 
     // invalidate loader cache when bundle is marked as invalid (in watch mode)
     this._compiler.plugin('invalid', () => {
@@ -104,7 +136,11 @@ module.exports = function purescriptLoader(source, map) {
         ideServer: cache.ideServer,
         psModuleMap: cache.psModuleMap,
         warnings: [],
-        errors: []
+        errors: [],
+        compilationStarted: cache.compilationStarted,
+        compilationFinished: cache.compilationFinished,
+        installed: cache.installed,
+        srcOption: cache.srcOption
       };
     });
 
