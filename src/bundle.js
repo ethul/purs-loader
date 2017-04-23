@@ -12,12 +12,10 @@ const debug = require('debug')('purs-loader');
 
 const dargs = require('./dargs');
 
-module.exports = function bundle(options, cache) {
-  if (cache.bundle) return Promise.resolve(cache.bundle)
-
+module.exports = function bundle(options, bundleModules) {
   const stdout = []
 
-  const stderr = cache.bundle = []
+  const stderr = []
 
   const bundleCommand = options.pscBundle || 'purs';
 
@@ -27,9 +25,9 @@ module.exports = function bundle(options, cache) {
     namespace: options.bundleNamespace,
   }, options.pscBundleArgs)));
 
-  cache.bundleModules.forEach(name => bundleArgs.push('--module', name))
+  bundleModules.forEach(name => bundleArgs.push('--module', name))
 
-  debug('spawning bundler %s %o', bundleCommand, bundleArgs);
+  debug('bundle: %s %o', bundleCommand, bundleArgs);
 
   return (new Promise((resolve, reject) => {
     debug('bundling PureScript...')
@@ -45,15 +43,16 @@ module.exports = function bundle(options, cache) {
 
       if (code !== 0) {
         const errorMessage = stderr.join('');
+
         if (errorMessage.length) {
           psModule.emitError(errorMessage);
         }
-        return reject(new Error('bundling failed'))
+
+        reject(new Error('bundling failed'))
       }
-
-      cache.bundle = stderr
-
-      resolve(fs.appendFileAsync(options.bundleOutput, `module.exports = ${options.bundleNamespace}`))
+      else {
+        resolve(fs.appendFileAsync(options.bundleOutput, `module.exports = ${options.bundleNamespace}`))
+      }
     })
   }))
 };

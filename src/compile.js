@@ -4,16 +4,16 @@ const Promise = require('bluebird');
 
 const spawn = require('cross-spawn');
 
-const debug = require('debug')('purs-loader');
+const debug_ = require('debug');
+
+const debug = debug_('purs-loader');
+
+const debugVerbose = debug_('purs-loader:verbose');
 
 const dargs = require('./dargs');
 
 module.exports = function compile(psModule) {
   const options = psModule.options
-
-  const cache = psModule.cache
-
-  const stderr = []
 
   const compileCommand = options.psc || 'purs';
 
@@ -22,7 +22,9 @@ module.exports = function compile(psModule) {
     output: options.output,
   }, options.pscArgs)))
 
-  debug('spawning compiler %s %o', compileCommand, compileArgs)
+  const stderr = [];
+
+  debug('compile %s %o', compileCommand, compileArgs)
 
   return new Promise((resolve, reject) => {
     debug('compiling PureScript...')
@@ -33,8 +35,13 @@ module.exports = function compile(psModule) {
       stderr.push(data.toString());
     });
 
+    compilation.stdout.on('data', data => {
+      debugVerbose(data.toString());
+    });
+
     compilation.on('close', code => {
       debug('finished compiling PureScript.')
+
       if (code !== 0) {
         const errorMessage = stderr.join('');
         if (errorMessage.length) {
