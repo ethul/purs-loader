@@ -36,9 +36,9 @@ UnknownModuleError.prototype.constructor = UnknownModuleError;
 module.exports.UnknownModuleError = UnknownModuleError;
 
 function spawnIdeClient(body, options) {
-  const ideClientCommand = 'purs';
+  const ideClientCommand = options.pscIdeClient || 'purs';
 
-  const ideClientArgs = ['ide', 'client'].concat(dargs(options.pscIdeArgs));
+  const ideClientArgs = (options.pscIdeClient ? [] : ['ide', 'client']).concat(dargs(options.pscIdeClientArgs));
 
   const stderr = [];
 
@@ -144,9 +144,9 @@ function formatIdeResult(result, options, index, length) {
 module.exports.connect = function connect(psModule) {
   const options = psModule.options
 
-  const serverCommand = 'purs';
+  const serverCommand = options.pscIdeServer || 'purs';
 
-  const serverArgs = ['ide', 'server'].concat(dargs(Object.assign({
+  const serverArgs = (options.pscIdeServer ? [] : ['ide', 'server']).concat(dargs(Object.assign({
     outputDirectory: options.output,
     '_': options.src
   }, options.pscIdeServerArgs)));
