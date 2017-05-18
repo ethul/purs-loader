@@ -28,6 +28,8 @@ const spawn = require('cross-spawn').sync
 
 const eol = require('os').EOL
 
+const fs = require('fs')
+
 module.exports = function purescriptLoader(source, map) {
   this.cacheable && this.cacheable();
 
@@ -313,6 +315,15 @@ module.exports = function purescriptLoader(source, map) {
         .then(() =>
           PsModuleMap.makeMap(options.src).then(map => {
             debug('rebuilt module map after compilation');
+
+            if (options.bundle) {
+              Object.values(map).forEach(({ src, ffi }) => {
+                if (src)
+                  this.addDependency(src);
+                if (ffi && fs.existsSync(ffi))
+                  this.addDependency(ffi);
+              });
+            }
 
             cache.psModuleMap = map;
           })
