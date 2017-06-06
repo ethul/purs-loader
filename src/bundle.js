@@ -44,10 +44,6 @@ module.exports = function bundle(options, bundleModules) {
       if (code !== 0) {
         const errorMessage = stderr.join('');
 
-        if (errorMessage.length) {
-          psModule.emitError(errorMessage);
-        }
-
         reject(new Error('bundling failed'))
       }
       else {
