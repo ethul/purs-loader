@@ -372,34 +372,36 @@ function bundle(options, cache) {
 
 // map of PS module names to their source path
 function psModuleMap(options, cache) {
-  if (cache.psModuleMap) return Promise.resolve(cache.psModuleMap)
+  if (cache.psModuleMap) {
+    return cache.psModuleMap;
+  }
+  else {
+    const globs = [].concat(options.src).concat(options.ffi);
 
-  const globs = [].concat(options.src).concat(options.ffi)
-
-  return globby(globs).then(paths => {
-    return Promise
-      .props(paths.reduce((map, file) => {
-        map[file] = fs.readFileAsync(file, 'utf8')
-        return map
-      }, {}))
-      .then(fileMap => {
-        cache.psModuleMap = Object.keys(fileMap).reduce((map, file) => {
-          const source = fileMap[file]
-          const ext = path.extname(file)
-          const isPurs = ext.match(/purs$/i)
-          const moduleRegex = isPurs ? srcModuleRegex : ffiModuleRegex
-          const moduleName = match(moduleRegex, source)
-          map[moduleName] = map[moduleName] || {}
+    cache.psModuleMap = globby(globs).then(paths =>
+      Promise.props(paths.reduce((map, file) => {
+        map[file] = fs.readFileAsync(file, 'utf8');
+        return map;
+      }, {})).then(fileMap =>
+        Object.keys(fileMap).reduce((map, file) => {
+          const source = fileMap[file];
+          const ext = path.extname(file);
+          const isPurs = ext.match(/purs$/i);
+          const moduleRegex = isPurs ? srcModuleRegex : ffiModuleRegex;
+          const moduleName = match(moduleRegex, source);
+          map[moduleName] = map[moduleName] || {};
           if (isPurs) {
-            map[moduleName].src = path.resolve(file)
+            map[moduleName].src = path.resolve(file);
           } else {
-            map[moduleName].ffi = path.resolve(file)
+            map[moduleName].ffi = path.resolve(file);
           }
-          return map
+          return map;
         }, {})
-        return cache.psModuleMap
-      })
-  })
+      )
+    );
+
+    return cache.psModuleMap;
+  }
 }
 
 function connectIdeServer(psModule) {
