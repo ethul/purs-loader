@@ -12,6 +12,8 @@ const Promise = require('bluebird')
 
 const path = require('path')
 
+const fs = require('fs');
+
 const PsModuleMap = require('./purs-module-map');
 
 const compile = require('./compile');
@@ -21,6 +23,8 @@ const bundle = require('./bundle');
 const ide = require('./ide');
 
 const toJavaScript = require('./to-javascript');
+
+const sourceMaps = require('./source-maps');
 
 const dargs = require('./dargs');
 
@@ -168,9 +172,11 @@ module.exports = function purescriptLoader(source, map) {
 
   const psModule = {
     name: psModuleName,
-    load: js => callback(null, js),
+    source: source,
+    load: ({js, map}) => callback(null, js, map),
     reject: error => callback(error),
     srcPath: this.resourcePath,
+    remainingRequest: loaderUtils.getRemainingRequest(this),
     srcDir: path.dirname(this.resourcePath),
     jsPath: path.resolve(path.join(options.output, psModuleName, 'index.js')),
     options: options,
@@ -226,6 +232,7 @@ module.exports = function purescriptLoader(source, map) {
       ide.rebuild(psModule)
       .then(() =>
         toJavaScript(psModule)
+          .then(js => sourceMaps(psModule, js))
           .then(psModule.load)
           .catch(psModule.reject)
       )
@@ -255,6 +262,7 @@ module.exports = function purescriptLoader(source, map) {
                 Promise.map(cache.deferred, psModule =>
                   ide.load(psModule)
                     .then(() => toJavaScript(psModule))
+                    .then(js => sourceMaps(psModule, js))
                     .then(psModule.load)
                 )
               )
@@ -287,6 +295,7 @@ module.exports = function purescriptLoader(source, map) {
     debugVerbose('compilation is already finished, loading module %s', psModule.name);
 
     toJavaScript(psModule)
+      .then(js => sourceMaps(psModule, js))
       .then(psModule.load)
       .catch(psModule.reject);
   }
@@ -320,6 +329,7 @@ module.exports = function purescriptLoader(source, map) {
         .then(() =>
           Promise.map(cache.deferred, psModule =>
             toJavaScript(psModule)
+              .then(js => sourceMaps(psModule, js))
               .then(psModule.load)
           )
         )
