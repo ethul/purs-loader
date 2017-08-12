@@ -12,8 +12,6 @@ const Promise = require('bluebird')
 
 const path = require('path')
 
-const fs = require('fs');
-
 const PsModuleMap = require('./purs-module-map');
 
 const compile = require('./compile');
