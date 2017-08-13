@@ -30,24 +30,57 @@ const spawn = require('cross-spawn').sync
 
 const eol = require('os').EOL
 
+const cacheWeakMap = new class PurescriptLoaderCacheWeakMap {
+  constructor() {
+    this._map = new WeakMap();
+  }
+
+  intern(webpackConfig) {
+    if (!this._map.has(webpackConfig)) {
+      this._map.set(webpackConfig, {
+        rebuild: false,
+        deferred: [],
+        bundleModules: [],
+        ideServer: null,
+        psModuleMap: null,
+        warnings: [],
+        errors: [],
+        compilationStarted: false,
+        compilationFinished: false,
+        installed: false,
+        srcOption: []
+      });
+    }
+
+    return this._map.get(webpackConfig);
+  }
+
+  invalidate(webpackConfig, options, cache) {
+    const newCache = {
+      rebuild: options.pscIde,
+      deferred: [],
+      bundleModules: [],
+      ideServer: cache.ideServer,
+      psModuleMap: cache.psModuleMap,
+      warnings: [],
+      errors: [],
+      compilationStarted: false,
+      compilationFinished: false,
+      installed: cache.installed,
+      srcOption: []
+    };
+
+    this._map.set(webpackConfig, newCache);
+    return newCache;
+  }
+};
+
 module.exports = function purescriptLoader(source, map) {
   this.cacheable && this.cacheable();
 
   const webpackConfig = this.options;
 
-  var cache = webpackConfig.purescriptLoaderCache = webpackConfig.purescriptLoaderCache || {
-    rebuild: false,
-    deferred: [],
-    bundleModules: [],
-    ideServer: null,
-    psModuleMap: null,
-    warnings: [],
-    errors: [],
-    compilationStarted: false,
-    compilationFinished: false,
-    installed: false,
-    srcOption: []
-  };
+  var cache = cacheWeakMap.intern(webpackConfig);
 
   const callback = this.async();
 
@@ -137,19 +170,7 @@ module.exports = function purescriptLoader(source, map) {
     this._compiler.plugin('invalid', () => {
       debugVerbose('invalidating loader cache');
 
-      cache = webpackConfig.purescriptLoaderCache = {
-        rebuild: options.pscIde,
-        deferred: [],
-        bundleModules: [],
-        ideServer: cache.ideServer,
-        psModuleMap: cache.psModuleMap,
-        warnings: [],
-        errors: [],
-        compilationStarted: false,
-        compilationFinished: false,
-        installed: cache.installed,
-        srcOption: []
-      };
+      cache = cacheWeakMap.invalidate(webpackConfig, options, cache);
     });
 
     // add psc warnings to webpack compilation warnings
