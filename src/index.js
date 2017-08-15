@@ -26,54 +26,13 @@ const sourceMaps = require('./source-maps');
 
 const dargs = require('./dargs');
 
+const CacheWeakMap = require('./cache-weak-map');
+
 const spawn = require('cross-spawn').sync
 
 const eol = require('os').EOL
 
-const cacheWeakMap = new class PurescriptLoaderCacheWeakMap {
-  constructor() {
-    this._map = new WeakMap();
-  }
-
-  intern(webpackConfig) {
-    if (!this._map.has(webpackConfig)) {
-      this._map.set(webpackConfig, {
-        rebuild: false,
-        deferred: [],
-        bundleModules: [],
-        ideServer: null,
-        psModuleMap: null,
-        warnings: [],
-        errors: [],
-        compilationStarted: false,
-        compilationFinished: false,
-        installed: false,
-        srcOption: []
-      });
-    }
-
-    return this._map.get(webpackConfig);
-  }
-
-  invalidate(webpackConfig, options, cache) {
-    const newCache = {
-      rebuild: options.pscIde,
-      deferred: [],
-      bundleModules: [],
-      ideServer: cache.ideServer,
-      psModuleMap: cache.psModuleMap,
-      warnings: [],
-      errors: [],
-      compilationStarted: false,
-      compilationFinished: false,
-      installed: cache.installed,
-      srcOption: []
-    };
-
-    this._map.set(webpackConfig, newCache);
-    return newCache;
-  }
-};
+const cacheWeakMap = new CacheWeakMap();
 
 module.exports = function purescriptLoader(source, map) {
   this.cacheable && this.cacheable();
