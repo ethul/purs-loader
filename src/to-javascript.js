@@ -26,21 +26,24 @@ function updatePsModuleMap(psModule) {
   const filePurs = psModule.srcPath;
 
   if (!cache.psModuleMap) {
-    debug('module mapping does not exist');
+    debugVerbose('module mapping does not exist - making a new module map');
 
-    return PsModuleMap.makeMap(options.src).then(map => {
-      cache.psModuleMap = map;
-      return cache.psModuleMap;
-    });
+    cache.psModuleMap = PsModuleMap.makeMap(options.src);
+
+    return cache.psModuleMap;
   }
   else {
-    return PsModuleMap.makeMapEntry(filePurs).then(result => {
-      const map = Object.assign(cache.psModuleMap, result);
+    debugVerbose('module mapping exists - updating module map for %s', filePurs);
 
-      cache.psModuleMap = map;
+    cache.psModuleMap = cache.psModuleMap.then(psModuleMap =>
+      PsModuleMap.makeMapEntry(filePurs).then(result => {
+        const map = Object.assign(psModuleMap, result);
 
-      return cache.psModuleMap;
-    });
+        return map;
+      })
+    );
+
+    return cache.psModuleMap;
   }
 }
 

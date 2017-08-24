@@ -250,13 +250,6 @@ module.exports = function purescriptLoader(source, map) {
                 cache.compilationFinished = true;
               })
               .then(() =>
-                PsModuleMap.makeMap(options.src).then(map => {
-                  debug('rebuilt module map after unknown module forced a recompilation');
-
-                  cache.psModuleMap = map;
-                })
-              )
-              .then(() =>
                 Promise.map(cache.deferred, psModule =>
                   ide.load(psModule)
                     .then(() => toJavaScript(psModule))
@@ -317,13 +310,6 @@ module.exports = function purescriptLoader(source, map) {
             return bundle(options, cache.bundleModules);
           }
         })
-        .then(() =>
-          PsModuleMap.makeMap(options.src).then(map => {
-            debug('rebuilt module map after compilation');
-
-            cache.psModuleMap = map;
-          })
-        )
         .then(() =>
           Promise.map(cache.deferred, psModule =>
             toJavaScript(psModule)
