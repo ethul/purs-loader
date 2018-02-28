@@ -33,7 +33,7 @@ const eol = require('os').EOL
 module.exports = function purescriptLoader(source, map) {
   this.cacheable && this.cacheable();
 
-  const webpackConfig = this.options;
+  const webpackConfig = this.options || {};
 
   var cache = webpackConfig.purescriptLoaderCache = webpackConfig.purescriptLoaderCache || {
     rebuild: false,
