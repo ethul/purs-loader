@@ -69,9 +69,9 @@ function makeBundleJS(psModule) {
 // any new imports in order to allow webpack to watch the new files
 // before they have been successfully compiled.
 function makeJS(psModule, psModuleMap, js) {
-  const requireRE = /require\(['"]\.\.\/([\w\.]+)['"]\)/g;
+  const requireRE = /require\(['"]\.\.\/([\w\.]+)(?:\/index\.js)?['"]\)/g;
 
-  const foreignRE = /require\(['"]\.\/foreign['"]\)/g;
+  const foreignRE = /require\(['"]\.\/foreign(?:\.js)?['"]\)/g;
 
   const name = psModule.name;
 
