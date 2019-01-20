@@ -45,10 +45,11 @@ module.exports = function bundle(options, bundleModules) {
         const errorMessage = stderr.join('');
 
         if (errorMessage.length) {
-          psModule.emitError(errorMessage);
+          reject(new Error(`bundling failed: ${errorMessage}`))
         }
-
-        reject(new Error('bundling failed'))
+        else {
+          reject(new Error('bundling failed'))
+        }
       }
       else {
         resolve(fs.appendFileAsync(options.bundleOutput, `module.exports = ${options.bundleNamespace}`))
