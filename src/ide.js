@@ -202,9 +202,9 @@ module.exports.rebuild = function rebuild(psModule) {
 
   const body = {
     command: 'rebuild',
-    params: {
+    params: Object.assign({
       file: psModule.srcPath,
-    }
+    }, options.pscIdeRebuildArgs)
   };
 
   const parseResponse = response => {

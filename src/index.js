@@ -24,8 +24,6 @@ const toJavaScript = require('./to-javascript');
 
 const sourceMaps = require('./source-maps');
 
-const dargs = require('./dargs');
-
 const spawn = require('cross-spawn').sync
 
 const eol = require('os').EOL
@@ -114,6 +112,7 @@ module.exports = function purescriptLoader(source, map) {
     pscIdeClientArgs: {},
     pscIdeServer: null,
     pscIdeServerArgs: {},
+    pscIdeRebuildArgs: {},
     pscIde: false,
     pscIdeColors: loaderOptions.psc === 'psa',
     pscPackage: false,
