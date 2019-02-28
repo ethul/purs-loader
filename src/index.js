@@ -132,8 +132,7 @@ module.exports = function purescriptLoader(source, map) {
 
     CACHE_VAR.installed = true;
 
-    // invalidate loader CACHE_VAR when bundle is marked as invalid (in watch mode)
-    this._compiler.plugin('invalid', () => {
+    const invalidCb = () => {
       debugVerbose('invalidating loader CACHE_VAR');
 
       CACHE_VAR = {
@@ -149,10 +148,16 @@ module.exports = function purescriptLoader(source, map) {
         installed: CACHE_VAR.installed,
         srcOption: []
       };
-    });
+    }
 
-    // add psc warnings to webpack compilation warnings
-    this._compiler.plugin('after-compile', (compilation, callback) => {
+    // invalidate loader CACHE_VAR when bundle is marked as invalid (in watch mode)
+    if(this._compiler.hooks){
+      this._compiler.hooks.invalid.tap('purs-loader', invalidCb);
+    } else {
+      this._compiler.plugin('invalid', invalidCb);
+    }
+
+    const afterCompileCb = (compilation, callback) => {
       CACHE_VAR.warnings.forEach(warning => {
         compilation.warnings.push(warning);
       });
@@ -162,7 +167,14 @@ module.exports = function purescriptLoader(source, map) {
       });
 
       callback()
-    });
+    }
+
+    // add psc warnings to webpack compilation warnings
+    if(this._compiler.hooks) {
+      this._compiler.hooks.afterCompile.tapAsync('purs-loader', afterCompileCb);
+    } else {
+      this._compiler.plugin('after-compile', afterCompileCb);
+    }
   }
 
   const psModuleName = PsModuleMap.matchModule(source);
