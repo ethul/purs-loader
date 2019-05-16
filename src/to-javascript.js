@@ -109,11 +109,20 @@ function makeJS(psModule, psModuleMap, js) {
     return Promise.resolve(result);
   }
   else {
-    debug('rebuilding module map due to additional imports for %s: %o', name, additionalImports);
+    const missingImports = additionalImports.filter(moduleName =>
+        !psModuleMap[moduleName] && moduleName.split('.')[0] !== 'Prim'
+    );
 
-    psModule.cache.psModuleMap = null;
+    let updatingPsModuleMap;
+    if (missingImports.length > 0) {
+        debug('rebuilding module map due to missing imports for %s: %o', name, missingImports);
+        psModule.cache.psModuleMap = null;
+        updatingPsModuleMap = updatePsModuleMap(psModule);
+    } else {
+        updatingPsModuleMap = Promise.resolve(psModuleMap);
+    }
 
-    return updatePsModuleMap(psModule).then(updatedPsModuleMap => {
+    return updatingPsModuleMap.then(updatedPsModuleMap => {
       const additionalImportsResult = additionalImports.map(import_ => {
         const moduleValue = updatedPsModuleMap[import_];
 
