@@ -123,7 +123,7 @@ function makeJS(psModule, psModuleMap, js) {
     }
 
     return updatingPsModuleMap.then(updatedPsModuleMap => {
-      const additionalImportsResult = additionalImports.map(import_ => {
+      const missingImportsResult = missingImports.map(import_ => {
         const moduleValue = updatedPsModuleMap[import_];
 
         if (!moduleValue) {
@@ -138,7 +138,7 @@ function makeJS(psModule, psModuleMap, js) {
         }
       }).filter(a => a !== null).join('\n');
 
-      return result + '\n' + additionalImportsResult;
+      return result + '\n' + missingImportsResult;
     });
   }
 }
