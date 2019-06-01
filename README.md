@@ -62,7 +62,8 @@ const loaderConfig = {
   pscIdeServerArgs: {}, // for example, to change the port {port: 4088}
   pscIdeRebuildArgs: {} // for example, for sourcemaps {codegen: ['js', 'sourcemaps']}
   pscIdeColors: false, // defaults to true if psc === 'psa'
-  pscPackage: false,
+  pscPackage: false, // include dependencies from psc-package
+  spago: false, // include dependencies from spago
   bundleOutput: 'output/bundle.js',
   bundleNamespace: 'PS',
   bundle: false,
@@ -71,10 +72,12 @@ const loaderConfig = {
   output: 'output',
   src: [
     path.join('src', '**', '*.purs'),
-    // if pscPackage = false
-    path.join('bower_components', 'purescript-*', 'src', '**', '*.purs')
     // if pscPackage = true
     // source paths reported by `psc-package sources`
+    // if spago = true
+    // source paths reported by `spago sources`
+    // if pscPackage = false and spago = false
+    path.join('bower_components', 'purescript-*', 'src', '**', '*.purs')
   ]
 }
 ```
@@ -89,6 +92,11 @@ if there is no server running this loader will start one for you.
 ### `psc-package` support (experimental)
 
 Set `pscPackage` query parameter to `true` to enable `psc-package` support. The `psc-package`-supplied source paths
+will be appended to `src` parameter.
+
+### `spago` support (experimental)
+
+Set `spago` query parameter to `true` to enable `spago` support. The `spago`-supplied source paths
 will be appended to `src` parameter.
 
 ### Troubleshooting
