@@ -42,6 +42,37 @@ var CACHE_VAR = {
   srcOption: []
 };
 
+// include src files provided by psc-package or Spago
+function requestDependencySources(packagerCommand, srcPath, loaderOptions) {
+  const packagerArgs = ['sources'];
+
+  const loaderSrc = loaderOptions.src || [
+    srcPath
+  ];
+
+  debug('%s %o', packagerCommand, packagerArgs);
+
+  const cmd = spawn(packagerCommand, packagerArgs);
+
+  if (cmd.error) {
+    throw new Error(cmd.error);
+  }
+  else if (cmd.status !== 0) {
+    const error = cmd.stdout.toString();
+
+    throw new Error(error);
+  }
+  else {
+    const result = cmd.stdout.toString().split(eol).filter(v => v != '').concat(loaderSrc);
+
+    debug('%s result: %o', packagerCommand, result);
+
+    CACHE_VAR.srcOption = result;
+
+    return result;
+  }
+}
+
 module.exports = function purescriptLoader(source, map) {
   this.cacheable && this.cacheable();
 
@@ -51,7 +82,7 @@ module.exports = function purescriptLoader(source, map) {
 
   const loaderOptions = loaderUtils.getOptions(this) || {};
 
-  const srcOption = (pscPackage => {
+  const srcOption = ((pscPackage, spago) => {
     const srcPath = path.join('src', '**', '*.purs');
 
     const bowerPath = path.join('bower_components', 'purescript-*', 'src', '**', '*.purs');
@@ -60,36 +91,11 @@ module.exports = function purescriptLoader(source, map) {
       return CACHE_VAR.srcOption;
     }
     else if (pscPackage) {
-      const pscPackageCommand = 'psc-package';
-
-      const pscPackageArgs = ['sources'];
-
-      const loaderSrc = loaderOptions.src || [
-        srcPath
-      ];
-
-      debug('psc-package %s %o', pscPackageCommand, pscPackageArgs);
-
-      const cmd = spawn(pscPackageCommand, pscPackageArgs);
-
-      if (cmd.error) {
-        throw new Error(cmd.error);
-      }
-      else if (cmd.status !== 0) {
-        const error = cmd.stdout.toString();
-
-        throw new Error(error);
-      }
-      else {
-        const result = cmd.stdout.toString().split(eol).filter(v => v != '').concat(loaderSrc);
-
-        debug('psc-package result: %o', result);
-
-        CACHE_VAR.srcOption = result;
-
-        return result;
-      }
+      return requestDependencySources('psc-package', srcPath, loaderOptions)
     }
+    else if (spago) {
+      return requestDependencySources('spago', srcPath, loaderOptions)
+    } 
     else {
       const result = loaderOptions.src || [
         bowerPath,
@@ -100,7 +106,7 @@ module.exports = function purescriptLoader(source, map) {
 
       return result;
     }
-  })(loaderOptions.pscPackage);
+  })(loaderOptions.pscPackage, loaderOptions.spago);
 
   const options = Object.assign({
     context: webpackContext,
@@ -116,6 +122,7 @@ module.exports = function purescriptLoader(source, map) {
     pscIde: false,
     pscIdeColors: loaderOptions.psc === 'psa',
     pscPackage: false,
+    spago: false,
     bundleOutput: 'output/bundle.js',
     bundleNamespace: 'PS',
     bundle: false,
