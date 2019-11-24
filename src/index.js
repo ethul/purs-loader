@@ -39,7 +39,8 @@ var CACHE_VAR = {
   compilationStarted: false,
   compilationFinished: false,
   installed: false,
-  srcOption: []
+  srcOption: [],
+  spagoOutputPath: null
 };
 
 // include src files provided by psc-package or Spago
@@ -68,6 +69,36 @@ function requestDependencySources(packagerCommand, srcPath, loaderOptions) {
     debug('%s result: %o', packagerCommand, result);
 
     CACHE_VAR.srcOption = result;
+
+    return result;
+  }
+}
+
+// 'spago output path' will return the output folder in a monorepo
+function getSpagoSources() {
+  const cachedVal = CACHE_VAR.spagoOutputPath;
+  if (cachedVal) {
+    return cachedVal
+  }
+  const command = "spago"
+  const args = ["path", "output"]
+
+  const cmd = spawn(command, args);
+
+  if (cmd.error) {
+    throw new Error(cmd.error);
+  }
+  else if (cmd.status !== 0) {
+    const error = cmd.stdout.toString();
+
+    throw new Error(error);
+  }
+  else {
+    const result = cmd.stdout.toString();
+
+    debug('"spago path output" result: %o', result);
+
+    CACHE_VAR.spagoOutputPath = result;
 
     return result;
   }
@@ -107,6 +138,8 @@ module.exports = function purescriptLoader(source, map) {
       return result;
     }
   })(loaderOptions.pscPackage, loaderOptions.spago);
+  
+  const outputPath = loaderOptions.spago ? getSpagoSources() : 'output'
 
   const options = Object.assign({
     context: webpackContext,
@@ -128,7 +161,7 @@ module.exports = function purescriptLoader(source, map) {
     bundle: false,
     warnings: true,
     watch: false,
-    output: 'output',
+    output: outputPath,
     src: []
   }, loaderOptions, {
     src: srcOption
