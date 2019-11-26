@@ -94,7 +94,7 @@ function getSpagoSources() {
     throw new Error(error);
   }
   else {
-    const result = cmd.stdout.toString();
+    const result = cmd.stdout.toString().split(eol)[0]
 
     debug('"spago path output" result: %o', result);
 
