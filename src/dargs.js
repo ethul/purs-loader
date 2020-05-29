@@ -1,7 +1,7 @@
-'use strict';
+"use strict"
 
-const dargs = require('dargs');
+const dargs = require("dargs")
 
-module.exports = function(obj){
-  return dargs(obj, {ignoreFalse: true});
-};
+module.exports = function (obj) {
+  return dargs(obj, { ignoreFalse: true })
+}
