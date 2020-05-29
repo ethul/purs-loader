@@ -12,7 +12,7 @@ const debugVerbose = debug_("purs-loader:verbose")
 
 const dargs = require("./dargs")
 
-module.exports = function compile (psModule) {
+module.exports = function compile(psModule) {
   const options = psModule.options
 
   const compileCommand = options.psc || "purs"

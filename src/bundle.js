@@ -12,7 +12,7 @@ const debug = require("debug")("purs-loader")
 
 const dargs = require("./dargs")
 
-module.exports = function bundle (options, bundleModules) {
+module.exports = function bundle(options, bundleModules) {
   const stdout = []
 
   const stderr = []

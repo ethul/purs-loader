@@ -20,7 +20,7 @@ const debugVerbose = debug_("purs-loader:verbose")
 
 const dargs = require("./dargs")
 
-function UnknownModuleError () {
+function UnknownModuleError() {
   this.name = "UnknownModuleError"
   this.stack = (new Error()).stack
 }
@@ -31,7 +31,7 @@ UnknownModuleError.prototype.constructor = UnknownModuleError
 
 module.exports.UnknownModuleError = UnknownModuleError
 
-function spawnIdeClient (body, options) {
+function spawnIdeClient(body, options) {
   const ideClientCommand = options.pscIdeClient || "purs"
 
   const ideClientArgs = (options.pscIdeClient ? [] : [ "ide", "client" ]).concat(dargs(options.pscIdeClientArgs))
@@ -73,15 +73,15 @@ function spawnIdeClient (body, options) {
   })
 }
 
-function formatIdeResult (result, options, index, length) {
+function formatIdeResult(result, options, index, length) {
   let numAndErr = `[${index + 1}/${length} ${result.errorCode}]`
   numAndErr = options.pscIdeColors ? colors.yellow(numAndErr) : numAndErr
 
-  function makeResult () {
+  function makeResult() {
     return Promise.resolve(`\n${numAndErr} ${result.message}`)
   }
 
-  function makeResultSnippet (filename, pos) {
+  function makeResultSnippet(filename, pos) {
     const srcPath = path.relative(options.context, filename)
     const fileAndPos = `${srcPath}:${pos.startLine}:${pos.startColumn}`
 
@@ -136,7 +136,7 @@ function formatIdeResult (result, options, index, length) {
   return result.filename && result.position ? makeResultSnippet(result.filename, result.position) : makeResult()
 }
 
-module.exports.connect = function connect (psModule) {
+module.exports.connect = function connect(psModule) {
   const options = psModule.options
 
   const serverCommand = options.pscIdeServer || "purs"
@@ -169,7 +169,7 @@ module.exports.connect = function connect (psModule) {
   return Promise.resolve(ideServer)
 }
 
-module.exports.load = function load (psModule) {
+module.exports.load = function load(psModule) {
   const options = psModule.options
 
   const body = { command: "load" }
@@ -177,7 +177,7 @@ module.exports.load = function load (psModule) {
   return spawnIdeClient(body, options)
 }
 
-module.exports.loadWithRetry = function loadWithRetry (psModule) {
+module.exports.loadWithRetry = function loadWithRetry(psModule) {
   const retries = 9
 
   return retryPromise((retry, number) => {
@@ -192,7 +192,7 @@ module.exports.loadWithRetry = function loadWithRetry (psModule) {
   }).then(() => psModule)
 }
 
-module.exports.rebuild = function rebuild (psModule) {
+module.exports.rebuild = function rebuild(psModule) {
   const options = psModule.options
 
   const body = {

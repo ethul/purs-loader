@@ -29,6 +29,9 @@ rules:
       maxEOF: 0
   no-return-assign: error
   no-useless-concat: error
+  space-before-function-paren:
+    - error
+    - never
   quotes:
     - error
     - double

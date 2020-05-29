@@ -44,7 +44,7 @@ var CACHE_VAR = {
 }
 
 // include src files provided by psc-package or Spago
-function requestDependencySources (packagerCommand, srcPath, loaderOptions) {
+function requestDependencySources(packagerCommand, srcPath, loaderOptions) {
   const packagerArgs = [ "sources" ]
 
   const loaderSrc = loaderOptions.src || [
@@ -73,7 +73,7 @@ function requestDependencySources (packagerCommand, srcPath, loaderOptions) {
 }
 
 // 'spago output path' will return the output folder in a monorepo
-function getSpagoSources () {
+function getSpagoSources() {
   const cachedVal = CACHE_VAR.spagoOutputPath
   if (cachedVal) {
     return cachedVal
@@ -100,7 +100,7 @@ function getSpagoSources () {
   }
 }
 
-module.exports = function purescriptLoader (source, map) {
+module.exports = function purescriptLoader(source, map) {
   this.cacheable && this.cacheable()
 
   const webpackContext = (this.options && this.options.context) || this.rootContext

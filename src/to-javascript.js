@@ -18,7 +18,7 @@ const debugVerbose = debug_("purs-loader:verbose")
 
 const PsModuleMap = require("./purs-module-map")
 
-function updatePsModuleMap (psModule) {
+function updatePsModuleMap(psModule) {
   const options = psModule.options
 
   const cache = psModule.cache
@@ -47,7 +47,7 @@ function updatePsModuleMap (psModule) {
 }
 
 // Reference the bundle.
-function makeBundleJS (psModule) {
+function makeBundleJS(psModule) {
   const bundleOutput = psModule.options.bundleOutput
 
   const name = psModule.name
@@ -67,7 +67,7 @@ function makeBundleJS (psModule) {
 // the compiler fails to compile the PureScript source, we can tack on
 // any new imports in order to allow webpack to watch the new files
 // before they have been successfully compiled.
-function makeJS (psModule, psModuleMap, js) {
+function makeJS(psModule, psModuleMap, js) {
   const requireRE = /require\(['"]\.\.\/([\w.]+)(?:\/index\.js)?['"]\)/g
 
   const foreignRE = /require\(['"]\.\/foreign(?:\.js)?['"]\)/g
@@ -139,7 +139,7 @@ function makeJS (psModule, psModuleMap, js) {
   }
 }
 
-module.exports = function toJavaScript (psModule) {
+module.exports = function toJavaScript(psModule) {
   const options = psModule.options
 
   // const cache = psModule.cache

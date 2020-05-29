@@ -10,7 +10,7 @@ const debug_ = require("debug")
 
 const debugVerbose = debug_("purs-loader:verbose")
 
-module.exports = function sourceMap (psModule, js) {
+module.exports = function sourceMap(psModule, js) {
   const options = psModule.options
 
   const jsPath = psModule.jsPath

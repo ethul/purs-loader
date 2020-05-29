@@ -14,17 +14,17 @@ const srcModuleRegex = /(?:^|\n)module\s+([\w.]+)/i
 
 const importModuleRegex = /(?:^|\n)\s*import\s+([\w.]+)/ig
 
-module.exports.matchModule = function matchModule (str) {
+module.exports.matchModule = function matchModule(str) {
   const matches = str.match(srcModuleRegex)
   return matches && matches[1]
 }
 
-module.exports.matchImports = function matchImports (str) {
+module.exports.matchImports = function matchImports(str) {
   const matches = str.match(importModuleRegex)
   return (matches || []).map(a => a.replace(/\n?\s*import\s+/i, ""))
 }
 
-module.exports.makeMapEntry = function makeMapEntry (filePurs) {
+module.exports.makeMapEntry = function makeMapEntry(filePurs) {
   const dirname = path.dirname(filePurs)
 
   const basename = path.basename(filePurs, ".purs")
@@ -61,7 +61,7 @@ module.exports.makeMapEntry = function makeMapEntry (filePurs) {
   return result
 }
 
-module.exports.makeMap = function makeMap (src) {
+module.exports.makeMap = function makeMap(src) {
   debug("loading PureScript source and FFI files from %o", src)
 
   const globs = [].concat(src)
