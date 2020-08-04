@@ -33,8 +33,9 @@ const webpackConfig = {
       loader: 'purs-loader',
       exclude: /node_modules/,
       query: {
-        psc: 'psa',
-        src: ['bower_components/purescript-*/src/**/*.purs', 'src/**/*.purs']
+        spago: true,
+        pscIde: true,
+        src: ['src/**/*.purs']
       }
     }
     // ...
