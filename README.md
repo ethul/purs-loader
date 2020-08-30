@@ -60,7 +60,7 @@ const loaderConfig = {
   pscIdeClientArgs: {}, // for example, to use different port {port: 4088}
   pscIdeServer: null, // purs ide server
   pscIdeServerArgs: {}, // for example, to change the port {port: 4088}
-  pscIdeRebuildArgs: {} // for example, for sourcemaps {codegen: ['js', 'sourcemaps']}
+  pscIdeRebuildArgs: {}, // for example, for sourcemaps {codegen: ['js', 'sourcemaps']}
   pscIdeColors: false, // defaults to true if psc === 'psa'
   pscPackage: false, // include dependencies from psc-package
   spago: false, // include dependencies from spago
