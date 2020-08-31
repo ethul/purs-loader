@@ -51,7 +51,7 @@ module.exports = function compile(psModule) {
           resolve(psModule);
         }
         else {
-          reject(new Error('compilation failed'))
+          reject(new Error('compilation failed: ' + errorMessage))
         }
       } else {
         const warningMessage = stderr.join('');
