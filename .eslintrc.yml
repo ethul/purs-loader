@@ -1,0 +1,38 @@
+root: true
+
+env:
+  node: true
+  es6: true
+  es2017: true
+
+extends: standard
+
+parserOptions:
+  ecmaVersion: 2020
+
+rules:
+  array-bracket-spacing:
+    - error
+    - always
+  array-callback-return: error
+  comma-dangle:
+    - error
+    - always-multiline
+  eqeqeq:
+    - error
+    - smart
+  guard-for-in: error
+  no-multiple-empty-lines:
+    - error
+    -
+      max: 2
+      maxEOF: 0
+  no-return-assign: error
+  no-useless-concat: error
+  space-before-function-paren:
+    - error
+    - never
+  quotes:
+    - error
+    - double
+    - avoid-escape

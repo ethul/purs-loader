@@ -1,59 +1,57 @@
-'use strict';
+"use strict"
 
-const path = require('path');
+const path = require("path")
 
-const Promise = require('bluebird')
+const Promise = require("bluebird")
 
-const fs = Promise.promisifyAll(require('fs'))
+const fs = Promise.promisifyAll(require("fs"))
 
-const spawn = require('cross-spawn')
+const spawn = require("cross-spawn")
 
-const debug = require('debug')('purs-loader');
+const debug = require("debug")("purs-loader")
 
-const dargs = require('./dargs');
+const dargs = require("./dargs")
 
 module.exports = function bundle(options, bundleModules) {
   const stdout = []
 
   const stderr = []
 
-  const bundleCommand = options.pscBundle || 'purs';
+  const bundleCommand = options.pscBundle || "purs"
 
-  const bundleArgs = (options.pscBundle ? [] : [ 'bundle' ]).concat(dargs(Object.assign({
-    _: [path.join(options.output, '*', '*.js')],
+  const bundleArgs = (options.pscBundle ? [] : [ "bundle" ]).concat(dargs(Object.assign({
+    _: [ path.join(options.output, "*", "*.js") ],
     output: options.bundleOutput,
     namespace: options.bundleNamespace,
-  }, options.pscBundleArgs)));
+  }, options.pscBundleArgs)))
 
-  bundleModules.forEach(name => bundleArgs.push('--module', name))
+  bundleModules.forEach(name => bundleArgs.push("--module", name))
 
-  debug('bundle: %s %O', bundleCommand, bundleArgs);
+  debug("bundle: %s %O", bundleCommand, bundleArgs)
 
   return (new Promise((resolve, reject) => {
-    debug('bundling PureScript...')
+    debug("bundling PureScript...")
 
     const compilation = spawn(bundleCommand, bundleArgs)
 
-    compilation.stdout.on('data', data => stdout.push(data.toString()))
+    compilation.stdout.on("data", data => stdout.push(data.toString()))
 
-    compilation.stderr.on('data', data => stderr.push(data.toString()))
+    compilation.stderr.on("data", data => stderr.push(data.toString()))
 
-    compilation.on('close', code => {
-      debug('finished bundling PureScript.')
+    compilation.on("close", code => {
+      debug("finished bundling PureScript.")
 
       if (code !== 0) {
-        const errorMessage = stderr.join('');
+        const errorMessage = stderr.join("")
 
         if (errorMessage.length) {
           reject(new Error(`bundling failed: ${errorMessage}`))
+        } else {
+          reject(new Error("bundling failed"))
         }
-        else {
-          reject(new Error('bundling failed'))
-        }
-      }
-      else {
+      } else {
         resolve(fs.appendFileAsync(options.bundleOutput, `module.exports = ${options.bundleNamespace}`))
       }
     })
   }))
-};
+}
