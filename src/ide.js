@@ -70,6 +70,14 @@ function spawnIdeClient(body, options) {
       }
     })
 
+    ideClient.stdin.on("error", e =>  {
+      stderr.push(e.toString());
+    });
+
+    ideClient.on("error", e => {
+      stderr.push(e.toString());
+    });
+
     ideClient.stdin.resume();
 
     ideClient.stdin.write(JSON.stringify(body));
