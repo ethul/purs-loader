@@ -6,6 +6,8 @@ const debug = debug_('purs-loader');
 
 const debugVerbose = debug_('purs-loader:verbose');
 
+const fs = require('fs');
+
 const loaderUtils = require('loader-utils')
 
 const Promise = require('bluebird')
@@ -26,7 +28,9 @@ const sourceMaps = require('./source-maps');
 
 const spawn = require('cross-spawn').sync
 
-const eol = require('os').EOL
+const eol = require('os').EOL;
+
+const globby = require('globby');
 
 var CACHE_VAR = {
   rebuild: false,
@@ -166,6 +170,17 @@ module.exports = function purescriptLoader(source, map) {
   }, loaderOptions, {
     src: srcOption
   });
+
+  const glob = [].concat(loaderOptions.src);
+  for (const file of globby.sync(glob)) {
+    debugVerbose('Adding', file, 'as a dependency');
+    this.addDependency(file);
+    const jsFile = path.join(path.dirname(file), path.basename(file, path.extname(file))) + '.js';
+    if (fs.existsSync(jsFile)) {
+      debugVerbose('Adding', jsFile, 'as a dependency');
+      this.addDependency(jsFile);
+    }
+  }
 
   if (!CACHE_VAR.installed) {
     debugVerbose('installing purs-loader with options: %O', options);
