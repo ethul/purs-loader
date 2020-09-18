@@ -161,6 +161,7 @@ module.exports = function purescriptLoader(source, map) {
     bundle: false,
     warnings: true,
     watch: false,
+    zephyr: false,
     output: outputPath,
     src: []
   }, loaderOptions, {
