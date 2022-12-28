@@ -126,7 +126,7 @@ module.exports = function purescriptLoader(source, map) {
     }
     else if (spago) {
       return requestDependencySources('spago', srcPath, loaderOptions)
-    } 
+    }
     else {
       const result = loaderOptions.src || [
         bowerPath,
@@ -138,7 +138,7 @@ module.exports = function purescriptLoader(source, map) {
       return result;
     }
   })(loaderOptions.pscPackage, loaderOptions.spago);
-  
+
   const outputPath = loaderOptions.spago ? getSpagoSources() : 'output'
 
   const options = Object.assign({
@@ -222,7 +222,14 @@ module.exports = function purescriptLoader(source, map) {
   const psModule = {
     name: psModuleName,
     source: source,
-    load: ({js, map}) => callback(null, js, map),
+    load: ({js, map}) => {
+      CACHE_VAR.psModuleMap.then(modulesMap => {
+        return callback(null, js, map, {
+          options: { src: options.src, output: options.output },
+          module: { name: psModuleName, map: modulesMap }
+        });
+      }, callback);
+    },
     reject: error => callback(error),
     srcPath: this.resourcePath,
     remainingRequest: loaderUtils.getRemainingRequest(this),
