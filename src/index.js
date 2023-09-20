@@ -45,7 +45,8 @@ var CACHE_VAR = {
 
 // include src files provided by psc-package or Spago
 function requestDependencySources(packagerCommand, srcPath, loaderOptions) {
-  const packagerArgs = ['sources'];
+  const spagoDhall = loaderOptions.spago ? loaderOptions.spagoDhall : null;
+  const packagerArgs = spagoDhall ? ['-x', spagoDhall, 'sources'] : ['sources'];
 
   const loaderSrc = loaderOptions.src || [
     srcPath
@@ -75,13 +76,13 @@ function requestDependencySources(packagerCommand, srcPath, loaderOptions) {
 }
 
 // 'spago output path' will return the output folder in a monorepo
-function getSpagoSources() {
+function getSpagoSources(spagoDhall) {
   const cachedVal = CACHE_VAR.spagoOutputPath;
   if (cachedVal) {
     return cachedVal
   }
   const command = "spago"
-  const args = ["path", "output"]
+  const args = spagoDhall ? ["-x", spagoDhall, "path", "output"] : ["path", "output"];
 
   const cmd = spawn(command, args);
 
@@ -139,7 +140,7 @@ module.exports = function purescriptLoader(source, map) {
     }
   })(loaderOptions.pscPackage, loaderOptions.spago);
   
-  const outputPath = loaderOptions.spago ? getSpagoSources() : 'output'
+  const outputPath = loaderOptions.spago ? getSpagoSources(loaderOptions.spagoDhall) : 'output'
 
   const options = Object.assign({
     context: webpackContext,
@@ -156,6 +157,7 @@ module.exports = function purescriptLoader(source, map) {
     pscIdeColors: loaderOptions.psc === 'psa',
     pscPackage: false,
     spago: false,
+    spagoDhall: null,
     bundleOutput: 'output/bundle.js',
     bundleNamespace: 'PS',
     bundle: false,
