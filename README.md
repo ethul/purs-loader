@@ -58,6 +58,7 @@ const loaderConfig = {
   pscIdeColors: false, // defaults to true if psc === 'psa'
   pscPackage: false, // include dependencies from psc-package
   spago: false, // include dependencies from spago
+  spagoDhall: null, // if set, uses the specified spago config (i.e., spago -x spagoDhall ...)
   bundleOutput: 'output/bundle.js',
   bundleNamespace: 'PS',
   bundle: false,

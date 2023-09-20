@@ -36,6 +36,16 @@ module.exports = function compile(psModule) {
     });
 
     compilation.stdout.on('data', data => {
+      // NB: it seems like the actual error details are printed to stdout
+      // (at least on 0.15). So without this, you'll just get an error line
+      // saying what file has the error, but not what the error is...
+      //
+      // Combined with the `stderr` of each file being combined above,
+      // this has the unfortunate side effect of printing every file
+      // compiled as a warning (assuming compilation succeeds).
+      //
+      // purs has --json-errors, and we should really be taking advantage of it here...
+      stderr.push(data.toString());
       debugVerbose(data.toString());
     });
 
