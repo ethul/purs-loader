@@ -63,7 +63,7 @@ const loaderConfig = {
   bundle: false,
   warnings: true,
   watch: false, // indicates if webpack is in watch mode
-  output: 'output',
+  output: 'output', // if not specified and spago = true, then as reported by `spago path output`
   src: [
     path.join('src', '**', '*.purs'),
     // if pscPackage = true

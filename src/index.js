@@ -139,7 +139,7 @@ module.exports = function purescriptLoader(source, map) {
     }
   })(loaderOptions.pscPackage, loaderOptions.spago);
   
-  const outputPath = loaderOptions.spago ? getSpagoSources() : 'output'
+  const outputPath = loaderOptions.output || (loaderOptions.spago ? getSpagoSources() : 'output')
 
   const options = Object.assign({
     context: webpackContext,
